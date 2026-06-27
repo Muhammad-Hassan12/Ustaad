@@ -118,6 +118,7 @@ This project is built directly to showcase core agentic paradigms taught in the 
    - `GEMINI_API_KEY`: Obtain from [Google AI Studio](https://aistudio.google.com/).
    - `SERPER_API_KEY`: Obtain from [Serper.dev](https://serper.dev/).
    - `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`: Grab from your Supabase Project Settings -> API.
+   - `KAGGLE_LLM_URL` (Optional): An OpenAI-compatible chat API endpoint (e.g. Qwen hosted on Kaggle via ngrok). When set, the system automatically uses it as a failover secondary model if Gemini free tier limits are exhausted.
 5. Spin up the backend server:
    ```bash
    uvicorn main:app --reload --port 8000

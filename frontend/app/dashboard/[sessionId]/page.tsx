@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PipelineProgress from "@/components/PipelineProgress";
 import MarketSnapshot from "@/components/MarketSnapshot";
@@ -9,7 +9,7 @@ import RoadmapTimeline from "@/components/RoadmapTimeline";
 import CVComparison from "@/components/CVComparison";
 import { subscribeToPipeline } from "@/lib/sse";
 import { getPipelineResults, getDossierUrl } from "@/lib/api";
-import { MessageSquare, Download, Loader2 } from "lucide-react";
+import { MessageSquare, Download, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { CardSkeleton } from "@/components/Skeleton";
 
@@ -22,14 +22,13 @@ export default function DashboardPage() {
   const [completedAgents, setCompletedAgents] = useState<string[]>([]);
   const [currentAgent, setCurrentAgent] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [sessionData, setSessionData] = useState<any>(null);
 
-  // Fetch updated results from DB
-  const refreshResults = async () => {
+  // Fetch updated results from DB — stable reference with useCallback
+  const refreshResults = useCallback(async () => {
     try {
       const data = await getPipelineResults(sessionId);
-      if (data) {
+      if (data && !data.error) {
         setSessionData(data);
         if (data.status) setStatus(data.status);
         if (data.agents_completed) setCompletedAgents(data.agents_completed);
@@ -39,7 +38,7 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Failed to load results:", err);
     }
-  };
+  }, [sessionId]);
 
   useEffect(() => {
     // Initial fetch to capture current state if page reloads
@@ -54,11 +53,10 @@ export default function DashboardPage() {
           setStatus("running");
         } else if (event.event === "agent_complete") {
           setCompletedAgents((prev) => {
-            const next = [...prev];
-            if (event.agent && !next.includes(event.agent)) {
-              next.push(event.agent);
+            if (event.agent && !prev.includes(event.agent)) {
+              return [...prev, event.agent];
             }
-            return next;
+            return prev;
           });
           refreshResults();
         } else if (event.event === "pipeline_complete") {
@@ -72,13 +70,13 @@ export default function DashboardPage() {
         }
       },
       () => {
-        // SSE connection closed
+        // SSE connection closed — do a final refresh
         refreshResults();
       }
     );
 
     return () => unsubscribe();
-  }, [sessionId]);
+  }, [sessionId, refreshResults]);
 
   const handleStartInterview = () => {
     router.push(`/interview/${sessionId}`);
@@ -89,11 +87,29 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full transition-all duration-300">
+    <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      {/* Status banner */}
+      {status === "running" && currentAgent && (
+        <div className="mb-6 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center gap-3 text-sm text-indigo-700 dark:text-indigo-300 animate-fadeInUp">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>
+            <span className="font-semibold">Career OS is running</span> — agents are analyzing your profile in real-time.
+          </span>
+        </div>
+      )}
+      {status === "complete" && (
+        <div className="mb-6 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-3 text-sm text-emerald-700 dark:text-emerald-300 animate-fadeInUp">
+          <Sparkles className="w-4 h-4 shrink-0" />
+          <span>
+            <span className="font-semibold">Analysis complete!</span> All agents finished. Start your mock interview or download your career dossier.
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Left Side Stepper (Span 4) */}
-        <div className="lg:col-span-4 sticky top-20 flex flex-col gap-6">
+        <div className="lg:col-span-4 sticky top-24 flex flex-col gap-4">
           <PipelineProgress
             completedAgents={completedAgents}
             currentAgent={currentAgent}
@@ -102,20 +118,25 @@ export default function DashboardPage() {
           />
 
           {status === "complete" && (
-            <div className="flex flex-col gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="flex flex-col gap-3"
+            >
               <button
                 onClick={handleStartInterview}
-                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center justify-center gap-2 shadow-md shadow-indigo-500/10 cursor-pointer transition-all"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 cursor-pointer transition-all text-sm"
               >
                 <MessageSquare size={16} /> Start Mock Interview
               </button>
               <button
                 onClick={handleDownloadDossier}
-                className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all text-sm"
               >
                 <Download size={16} /> Download Career Dossier
               </button>
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -123,13 +144,18 @@ export default function DashboardPage() {
         <div className="lg:col-span-8 flex flex-col gap-6">
           {completedAgents.length === 0 && status !== "error" && (
             <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center justify-center py-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-3" />
-                <h3 className="font-semibold text-sm text-slate-850 dark:text-slate-200">
+              <div className="flex flex-col items-center justify-center py-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center shadow-sm">
+                <div className="relative mb-4">
+                  <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
+                    <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
+                  </div>
+                  <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
+                </div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
                   Warming up Career OS...
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
-                  Ustaad is parsing your profile and fetching live job market insights.
+                <p className="text-xs text-slate-500 mt-1.5 max-w-xs leading-relaxed">
+                  Ustaad is parsing your profile and fetching live job market insights from Pakistan. This takes 2–4 minutes.
                 </p>
               </div>
               <CardSkeleton />

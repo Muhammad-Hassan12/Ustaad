@@ -4,7 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CVUpload from "@/components/CVUpload";
 import { startPipeline } from "@/lib/api";
-import { ArrowRight, Loader2, Sparkles, Send } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, Brain, Target, Zap, FileText } from "lucide-react";
+
+const features = [
+  { icon: Brain, label: "AI Profile Analysis", desc: "Deep CV parsing & profiling" },
+  { icon: Target, label: "Market Intelligence", desc: "Live Pakistan job market data" },
+  { icon: Zap, label: "Gap Analysis & Roadmap", desc: "Personalized learning paths" },
+  { icon: FileText, label: "ATS CV Rewrite", desc: "Keyword-optimized resume" },
+];
 
 export default function Home() {
   const router = useRouter();
@@ -52,123 +59,183 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-all duration-300">
-      {/* Background gradients */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/5 dark:bg-indigo-900/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/5 dark:bg-purple-900/10 blur-[120px] pointer-events-none" />
+    <main className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background gradient orbs */}
+      <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full bg-indigo-500/8 dark:bg-indigo-900/12 blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-5%] w-[45%] h-[45%] rounded-full bg-purple-500/8 dark:bg-purple-900/12 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full bg-violet-500/5 dark:bg-violet-900/8 blur-[100px] pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto w-full flex flex-col items-center gap-10 z-10">
-        
-        {/* Title Section */}
-        <div className="text-center flex flex-col items-center gap-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-150/10 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 border border-indigo-100/20 dark:border-indigo-900/20 text-xs font-semibold uppercase tracking-wider">
-            <Sparkles size={12} /> Capstone Vibe Coding Submission
+      <div className="max-w-5xl mx-auto w-full flex flex-col items-center gap-12 z-10">
+
+        {/* Hero Section */}
+        <div className="text-center flex flex-col items-center gap-5 animate-fadeInUp">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/40 text-xs font-bold uppercase tracking-widest">
+            <Sparkles size={12} />
+            Kaggle Capstone · Vibe Coding Submission
           </div>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-slate-650 dark:from-white dark:via-slate-200 dark:to-slate-400 leading-tight">
-            Ustaad <span className="text-indigo-600 dark:text-indigo-400 font-serif font-normal">اُستاد</span>
-          </h2>
-          <p className="text-md md:text-lg text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-            Upload your CV PDF. Get real-time tech market snapshot, gap analysis report, learning Roadmaps, and customized mock interviews.
-          </p>
+
+          <div className="flex flex-col gap-3">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-none">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-700 to-slate-600 dark:from-white dark:via-slate-200 dark:to-slate-400">
+                Ustaad
+              </span>{" "}
+              <span className="font-serif font-light text-indigo-500 dark:text-indigo-400 text-4xl md:text-6xl">
+                اُستاد
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 mt-1">
+              The career coach{" "}
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-cyan-500 dark:from-indigo-400 dark:to-cyan-400">
+                Pakistan never had.
+              </span>
+            </p>
+            <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed mx-auto mt-2">
+              Your AI-powered Career OS. Upload your CV — get a complete market snapshot, gap analysis, learning roadmap, ATS-optimized rewrite, and a personalized mock interview.
+            </p>
+          </div>
+
+          {/* Feature Pills */}
+          <div className="flex flex-wrap justify-center gap-3 mt-1">
+            {features.map((f, i) => (
+              <div
+                key={f.label}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-400 shadow-sm animate-fadeInUp`}
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <f.icon size={13} className="text-indigo-500 shrink-0" />
+                {f.label}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Input Card Container */}
+        {/* Input Form Card */}
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-xl p-8 rounded-2xl bg-white/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 backdrop-blur-md shadow-xl flex flex-col gap-6"
+          className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xl shadow-slate-200/60 dark:shadow-slate-950/80 flex flex-col gap-0 overflow-hidden animate-fadeInUp delay-200"
         >
-          {error && (
-            <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/20 text-rose-600 dark:text-rose-400 text-xs leading-relaxed font-semibold">
-              {error}
-            </div>
-          )}
-
-          {/* Drag & drop upload */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
-              Upload CV
-            </label>
-            <CVUpload file={file} onFileChange={setFile} />
+          {/* Form Header */}
+          <div className="px-8 pt-7 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              Start Your Career Analysis
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+              Fill in the details below and upload your CV to begin.
+            </p>
           </div>
 
-          {/* Form details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5 col-span-2">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
-                Target Role
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Machine Learning Engineer"
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm text-slate-850 dark:text-slate-200 transition-all placeholder-slate-400"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
-                Target City
-              </label>
-              <select
-                value={targetCity}
-                onChange={(e) => setTargetCity(e.target.value)}
-                className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm text-slate-850 dark:text-slate-200 transition-all cursor-pointer"
-              >
-                <option value="Karachi">Karachi</option>
-                <option value="Lahore">Lahore</option>
-                <option value="Islamabad">Islamabad</option>
-                <option value="Remote">Remote</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
-                Years of Experience
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="30"
-                step="0.5"
-                value={experience}
-                onChange={(e) => setExperience(parseFloat(e.target.value) || 0)}
-                className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm text-slate-850 dark:text-slate-200 transition-all"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 col-span-2">
-              <label className="text-xs font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider">
-                Education Level
-              </label>
-              <select
-                value={educationLevel}
-                onChange={(e) => setEducationLevel(e.target.value)}
-                className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-250 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-sm text-slate-850 dark:text-slate-200 transition-all cursor-pointer"
-              >
-                <option value="Bachelor's">Bachelor's Degree</option>
-                <option value="Master's">Master's Degree</option>
-                <option value="Ph.D.">Ph.D. Degree</option>
-                <option value="Self-taught">Self-taught / No Degree</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Processing CV...
-              </>
-            ) : (
-              <>
-                Start My Analysis <ArrowRight size={16} />
-              </>
+          <div className="px-8 py-6 flex flex-col gap-5">
+            {error && (
+              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 text-rose-600 dark:text-rose-400 text-xs leading-relaxed flex items-start gap-2">
+                <span className="shrink-0 mt-0.5">⚠️</span>
+                <span>{error}</span>
+              </div>
             )}
-          </button>
+
+            {/* CV Upload */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Upload CV (PDF)
+              </label>
+              <CVUpload file={file} onFileChange={setFile} />
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                Job Details
+              </span>
+              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+            </div>
+
+            {/* Form Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  Target Role
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Machine Learning Engineer"
+                  value={targetRole}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all placeholder-slate-400 dark:placeholder-slate-600"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  Target City
+                </label>
+                <select
+                  value={targetCity}
+                  onChange={(e) => setTargetCity(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
+                >
+                  <option value="Karachi">Karachi</option>
+                  <option value="Lahore">Lahore</option>
+                  <option value="Islamabad">Islamabad</option>
+                  <option value="Remote">Remote</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  Years of Experience
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  step="0.5"
+                  value={experience}
+                  onChange={(e) => setExperience(parseFloat(e.target.value) || 0)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5 col-span-2">
+                <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  Education Level
+                </label>
+                <select
+                  value={educationLevel}
+                  onChange={(e) => setEducationLevel(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
+                >
+                  <option value="Bachelor's">Bachelor&apos;s Degree</option>
+                  <option value="Master's">Master&apos;s Degree</option>
+                  <option value="Ph.D.">Ph.D. Degree</option>
+                  <option value="Self-taught">Self-taught / No Degree</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Footer */}
+          <div className="px-8 pb-7">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 flex items-center justify-center gap-2 cursor-pointer text-sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Launching Career OS...
+                </>
+              ) : (
+                <>
+                  Start My Analysis
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+            <p className="text-center text-[10px] text-slate-400 dark:text-slate-600 mt-3">
+              Analysis takes 2-4 minutes. Powered by Google Gemini 2.5 Flash.
+            </p>
+          </div>
         </form>
       </div>
     </main>
