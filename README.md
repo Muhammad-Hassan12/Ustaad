@@ -178,7 +178,7 @@ This makes the pipeline resilient against malformed LLM responses across both Ge
 ### 4. ✅ Production-Focused Async Pipeline Design
 - **Server-Sent Events (SSE)**: Pipeline status events are streamed in real-time to the Next.js frontend via an `asyncio.Queue` + SSE generator pattern, giving users live progress updates without polling.
 - **Exponential Backoff**: Gemini calls retry up to 8 times with `min(2^attempt, 15)` second waits on rate-limit errors.
-- **Model Failover**: If Gemini quota is exhausted, the pipeline automatically falls back to a secondary Qwen 3.5b model hosted on Kaggle via ngrok (configurable via `KAGGLE_LLM_URL`).
+- **Model Failover**: If Gemini quota is exhausted, the pipeline automatically falls back to a secondary Qwen 3.5 9b model (I used it for rapid testing purposes... Completely ignore it as it is a part of testing) hosted on Kaggle via ngrok (configurable via `KAGGLE_LLM_URL`).
 
 ---
 
