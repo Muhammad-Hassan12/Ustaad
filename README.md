@@ -192,7 +192,7 @@ This makes the pipeline resilient against malformed LLM responses across both Ge
 | **Backend** | Python 3.10+, FastAPI | Async REST API + SSE endpoint |
 | **PDF Parsing** | PyMuPDF (fitz) | CV text extraction from PDF uploads |
 | **AI/LLM** | Google Gemini 2.5 Flash | 7-agent pipeline backbone |
-| **Fallback LLM** | Qwen 3.5b (Kaggle-hosted) | Model resilience / quota overflow |
+| **Fallback LLM** | Qwen 3.5 9b (Kaggle-hosted) | Model resilience / quota overflow |
 | **Search API** | Serper.dev | Real-time job board grounding |
 | **Database** | Supabase (PostgreSQL) | Session state, interview history |
 | **PDF Generation** | ReportLab | Career Dossier PDF output |
