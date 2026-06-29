@@ -391,7 +391,7 @@ export default function AboutPage() {
                   <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
                     <step.icon size={20} />
                   </div>
-                  <span className="text-3xl font-black text-slate-200 dark:text-slate-800">{step.step}</span>
+                  <span className="text-3xl font-black text-indigo-300 dark:text-indigo-700">{step.step}</span>
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1.5">{step.title}</h3>
