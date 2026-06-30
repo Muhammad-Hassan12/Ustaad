@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CVUpload from "@/components/CVUpload";
 import { startPipeline } from "@/lib/api";
-import { ArrowRight, Loader2, Sparkles, Brain, Target, Zap, FileText } from "lucide-react";
+import { ArrowRight, Loader2, Sparkles, Brain, Target, Zap, FileText, ChevronDown } from "lucide-react";
 
 const features = [
   { icon: Brain, label: "AI Profile Analysis", desc: "Deep CV parsing & profiling" },
@@ -13,15 +13,52 @@ const features = [
   { icon: FileText, label: "ATS CV Rewrite", desc: "Keyword-optimized resume" },
 ];
 
+const DEFAULT_CITIES = [
+  "Karachi",
+  "Lahore",
+  "Islamabad",
+  "Rawalpindi",
+  "Faisalabad",
+  "Peshawar",
+  "Multan",
+  "Gujranwala",
+  "Sialkot",
+  "Hyderabad",
+  "Quetta",
+  "Remote"
+];
+
 export default function Home() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
-  const [targetCity, setTargetCity] = useState("Karachi");
+  const [targetCity, setTargetCity] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [experience, setExperience] = useState(1);
   const [educationLevel, setEducationLevel] = useState("Bachelor's");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const selectCity = (city: string) => {
+    setTargetCity(city);
+    setSearchTerm("");
+    setIsOpen(false);
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +68,10 @@ export default function Home() {
     }
     if (!targetRole.trim()) {
       setError("Please specify your target job role.");
+      return;
+    }
+    if (!targetCity.trim()) {
+      setError("Please specify your target city.");
       return;
     }
 
@@ -164,20 +205,68 @@ export default function Home() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5 relative" ref={dropdownRef}>
                 <label className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                   Target City
                 </label>
-                <select
-                  value={targetCity}
-                  onChange={(e) => setTargetCity(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
-                >
-                  <option value="Karachi">Karachi</option>
-                  <option value="Lahore">Lahore</option>
-                  <option value="Islamabad">Islamabad</option>
-                  <option value="Remote">Remote</option>
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search or type city..."
+                    value={isOpen ? searchTerm : targetCity}
+                    onFocus={() => {
+                      setSearchTerm(targetCity);
+                      setIsOpen(true);
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSearchTerm(val);
+                      setTargetCity(val);
+                    }}
+                    className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all placeholder-slate-400 dark:placeholder-slate-600"
+                  />
+                  <div
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 cursor-pointer p-1"
+                  >
+                    <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </div>
+                </div>
+
+                {isOpen && (
+                  <div className="absolute top-[calc(100%+4px)] left-0 right-0 z-50 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-1 shadow-lg shadow-slate-200/50 dark:shadow-slate-950/80">
+                    {DEFAULT_CITIES.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase())).map((city) => (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => selectCity(city)}
+                        className={`w-full text-left px-4 py-2 text-xs transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                          targetCity.toLowerCase() === city.toLowerCase()
+                            ? "text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/30 dark:bg-indigo-950/20"
+                            : "text-slate-700 dark:text-slate-350"
+                        }`}
+                      >
+                        {city}
+                      </button>
+                    ))}
+
+                    {searchTerm.trim() && !DEFAULT_CITIES.some(c => c.toLowerCase() === searchTerm.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => selectCity(searchTerm.trim())}
+                        className="w-full text-left px-4 py-2 text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 border-t border-slate-100 dark:border-slate-800/60 mt-1 pt-2"
+                      >
+                        Use custom: "{searchTerm.trim()}"
+                      </button>
+                    )}
+
+                    {DEFAULT_CITIES.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && !searchTerm.trim() && (
+                      <div className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 text-center">
+                        Type a city name to select it
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -204,10 +293,13 @@ export default function Home() {
                   onChange={(e) => setEducationLevel(e.target.value)}
                   className="px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-slate-900 dark:text-slate-100 transition-all cursor-pointer"
                 >
-                  <option value="Bachelor's">Bachelor&apos;s Degree</option>
-                  <option value="Master's">Master&apos;s Degree</option>
                   <option value="Ph.D.">Ph.D. Degree</option>
-                  <option value="Self-taught">Self-taught / No Degree</option>
+                  <option value="Master's">Master&apos;s Degree</option>
+                  <option value="Bachelor's">Bachelor&apos;s Degree</option>
+                  <option value="Associate / Diploma">Associate Degree / Diploma</option>
+                  <option value="Intermediate / A-Levels">Intermediate / A-Levels</option>
+                  <option value="Matric / O-Levels">Matriculation / O-Levels</option>
+                  <option value="Self-taught">Self-taught / Other</option>
                 </select>
               </div>
             </div>

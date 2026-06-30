@@ -642,7 +642,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                GenAI developer and co-founder of AgenticEra Systems.
+                GenAI Developer and Co-Founder of AgenticEra Systems.
                 Built the entire 7-agent pipeline, FastAPI backend, orchestration logic,
                 and the Kaggle Qwen model failover system.
               </p>
@@ -690,7 +690,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                Full-stack and agentic systems developer at AgenticEra Systems.
+                Full-stack, Agentic Systems Developer and Founder of AgenticEra Systems.
                 Built the complete Next.js frontend — dashboard, SSE-driven pipeline view,
                 mock interview terminal, CV diff view, and the About page.
               </p>
@@ -738,7 +738,7 @@ export default function AboutPage() {
               © 2026 AgenticEra Systems
             </p>
             <p className="text-center text-slate-400 dark:text-slate-500">
-              Built with Gemini 2.5 Flash 🤖 · Made in Karachi 🇵🇰
+              Built with Gemini 2.5 Flash · Made in Karachi-Pakistan 🇵🇰
             </p>
             <div className="flex items-center gap-5 font-semibold">
               <Link
