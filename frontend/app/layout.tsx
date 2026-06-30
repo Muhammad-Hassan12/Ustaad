@@ -89,18 +89,18 @@ export default function RootLayout({
             </Link>
 
             {/* Nav + controls */}
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2 sm:gap-5">
               {/* Nav links */}
-              <nav className="hidden sm:flex items-center gap-1">
+              <nav className="flex items-center gap-0.5 sm:gap-1">
                 <Link
                   href="/"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all"
+                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all"
                 >
                   Home
                 </Link>
                 <Link
                   href="/about"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all"
+                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all"
                 >
                   About
                 </Link>

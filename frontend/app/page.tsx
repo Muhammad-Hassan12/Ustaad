@@ -153,10 +153,10 @@ export default function Home() {
         {/* Input Form Card */}
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xl shadow-slate-200/60 dark:shadow-slate-950/80 flex flex-col gap-0 overflow-hidden animate-fadeInUp delay-200"
+          className="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xl shadow-slate-200/60 dark:shadow-slate-950/80 flex flex-col gap-0 overflow-hidden animate-fadeInUp delay-200 transition-all duration-300"
         >
           {/* Form Header */}
-          <div className="px-8 pt-7 pb-4 border-b border-slate-100 dark:border-slate-800/60">
+          <div className="px-8 pt-7 pb-4 border-b border-slate-100 dark:border-slate-800/60 transition-colors duration-300">
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Start Your Career Analysis
             </h2>
@@ -181,13 +181,12 @@ export default function Home() {
               <CVUpload file={file} onFileChange={setFile} />
             </div>
 
-            {/* Divider */}
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800 transition-colors duration-300" />
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Job Details
               </span>
-              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+              <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800 transition-colors duration-300" />
             </div>
 
             {/* Form Grid */}
