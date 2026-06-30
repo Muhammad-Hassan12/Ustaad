@@ -195,7 +195,7 @@ export default function AboutPage() {
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 dark:bg-indigo-900/10 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/5 dark:bg-cyan-900/10 blur-[100px]" />
         <div
-          className="absolute inset-0 opacity-[0.05] dark:opacity-[0.03]"
+          className="absolute inset-0 hidden sm:block opacity-[0.05] dark:opacity-[0.03]"
           style={{ backgroundImage: `radial-gradient(circle, #6366F1 1px, transparent 1px)`, backgroundSize: "40px 40px" }}
         />
       </div>
