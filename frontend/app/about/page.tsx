@@ -192,8 +192,8 @@ export default function AboutPage() {
 
       {/* ── Ambient background ── */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 dark:bg-indigo-900/10 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/5 dark:bg-cyan-900/10 blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 dark:bg-indigo-900/10 hidden sm:block blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/5 dark:bg-cyan-900/10 hidden sm:block blur-[100px]" />
         <div
           className="absolute inset-0 hidden sm:block opacity-[0.05] dark:opacity-[0.03]"
           style={{ backgroundImage: `radial-gradient(circle, #6366F1 1px, transparent 1px)`, backgroundSize: "40px 40px" }}
@@ -575,7 +575,7 @@ export default function AboutPage() {
         ══════════════════════════════════════ */}
         <Section className="max-w-3xl mx-auto px-6 py-20 flex justify-center">
           <div className="relative w-full rounded-3xl border border-indigo-100 dark:border-indigo-500/25 bg-white dark:bg-gradient-to-br dark:from-indigo-950/60 dark:to-slate-900 p-10 text-center overflow-hidden shadow-xl dark:shadow-2xl dark:shadow-indigo-500/10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-indigo-500/5 dark:bg-indigo-500/15 blur-[60px] rounded-full pointer-events-none" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-indigo-500/5 dark:bg-indigo-500/15 blur-[30px] sm:blur-[60px] rounded-full pointer-events-none" />
             <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Submitted to</p>
             <div className="flex items-center justify-center gap-3 mb-3">
               <span className="text-2xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 dark:from-indigo-400 dark:via-cyan-300 dark:to-indigo-400">
