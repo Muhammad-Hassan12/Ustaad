@@ -4,23 +4,70 @@ export function subscribeToPipeline(
   onDone: () => void
 ) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const es = new EventSource(`${API_URL}/api/pipeline/status/${sessionId}`);
+  let isCancelled = false;
 
-  es.onmessage = (e) => {
-    const data: PipelineEvent = JSON.parse(e.data);
-    onEvent(data);
-    if (data.event === "pipeline_complete" || data.event === "error") {
-      es.close();
+  const readStream = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/pipeline/status/${sessionId}`, {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "Accept": "text/event-stream"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body is not readable");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (!isCancelled) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const cleanLine = line.trim();
+          if (cleanLine.startsWith("data:")) {
+            try {
+              const jsonStr = cleanLine.substring(5).trim();
+              const data: PipelineEvent = JSON.parse(jsonStr);
+              onEvent(data);
+              if (data.event === "pipeline_complete" || data.event === "error") {
+                isCancelled = true;
+                onDone();
+                return;
+              }
+            } catch (err) {
+              console.error("Failed to parse SSE data line:", cleanLine, err);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("SSE stream fetch error:", err);
+      onEvent({ 
+        event: "error", 
+        message: `Connection failed: ${err instanceof Error ? err.message : String(err)}` 
+      });
       onDone();
     }
   };
 
-  es.onerror = () => {
-    es.close();
-    onDone();
-  };
+  readStream();
 
-  return () => es.close(); // cleanup function
+  return () => {
+    isCancelled = true;
+  };
 }
 
 export interface PipelineEvent {
