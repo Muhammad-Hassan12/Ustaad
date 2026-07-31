@@ -12,7 +12,6 @@ import {
   BarChart3, Layers, GitBranch, Shield, RefreshCcw, BookOpen
 } from "lucide-react";
 
-/* ── Brand SVG Icons ── */
 function GithubIcon({ size = 16, className = "" }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -29,7 +28,6 @@ function LinkedinIcon({ size = 16, className = "" }: { size?: number; className?
   );
 }
 
-/* ── Scroll-triggered section wrapper ── */
 function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -46,7 +44,7 @@ function Section({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
-/* ── Data: 7 Agents ── */
+/* Data: 7 Agents */
 const agents = [
   {
     icon: UserSearch,
@@ -99,7 +97,7 @@ const agents = [
   },
 ];
 
-/* ── Data: How It Works steps ── */
+/* Data: How It Works steps */
 const steps = [
   {
     icon: Upload,
@@ -127,7 +125,7 @@ const steps = [
   },
 ];
 
-/* ── Data: Deliverables ── */
+/* Data: Deliverables */
 const deliverables = [
   { icon: BarChart3, label: "Readiness Score", desc: "0–100 readiness benchmark vs. live market data" },
   { icon: GitCompare, label: "Gap Analysis Report", desc: "Critical vs. nice-to-have skills with priority rankings" },
@@ -137,7 +135,7 @@ const deliverables = [
   { icon: Download, label: "PDF Career Dossier", desc: "Full ReportLab-generated export of all findings" },
 ];
 
-/* ── Data: Course Concepts ── */
+/* Data: Course Concepts */
 const concepts = [
   {
     icon: Layers,
@@ -169,7 +167,7 @@ const concepts = [
   },
 ];
 
-/* ── Data: Tech Stack ── */
+/* Data: Tech Stack */
 const stack = [
   { icon: Sparkles, name: "Gemini 2.5 Flash", category: "AI" },
   { icon: Zap, name: "FastAPI", category: "Backend" },
@@ -183,14 +181,12 @@ const stack = [
   { icon: GitBranch, name: "TypeScript", category: "Frontend" },
 ];
 
-/* ══════════════════════════════════════════════════════════
-   PAGE COMPONENT
-══════════════════════════════════════════════════════════ */
+/* PAGE COMPONENT */
 export default function AboutPage() {
   return (
     <main className="about-page-wrapper relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-x-hidden">
 
-      {/* ── Ambient background ── */}
+      {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-600/10 dark:bg-indigo-900/10 hidden sm:block blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-500/5 dark:bg-cyan-900/10 hidden sm:block blur-[100px]" />
@@ -202,9 +198,7 @@ export default function AboutPage() {
 
       <div className="relative z-10">
 
-        {/* ══════════════════════════════════════
-            SECTION 1 — HERO
-        ══════════════════════════════════════ */}
+        {/* SECTION 1 — HERO */}
         <section className="relative min-h-[88vh] flex flex-col items-center justify-center text-center px-6 py-24 gap-8">
 
           {/* Badge */}
@@ -309,9 +303,7 @@ export default function AboutPage() {
           </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════
-            SECTION 2 — THE PROBLEM
-        ══════════════════════════════════════ */}
+        {/* SECTION 2 — THE PROBLEM */}
         <Section className="max-w-4xl mx-auto px-6 py-20">
           <div className="flex gap-5">
             <div className="w-1 rounded-full bg-gradient-to-b from-indigo-500 to-indigo-500/0 shrink-0" />
@@ -359,9 +351,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 3 — HOW IT WORKS
-        ══════════════════════════════════════ */}
+        {/* SECTION 3 — HOW IT WORKS */}
         <Section className="max-w-5xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">User Journey</p>
@@ -402,9 +392,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 4 — 7 AGENTS
-        ══════════════════════════════════════ */}
+        {/* SECTION 4 — 7 AGENTS */}
         <Section className="max-w-6xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">Architecture</p>
@@ -464,9 +452,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 5 — WHAT YOU GET
-        ══════════════════════════════════════ */}
+        {/* SECTION 5 — WHAT YOU GET */}
         <Section className="max-w-5xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">Deliverables</p>
@@ -500,9 +486,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 6 — COURSE CONCEPTS
-        ══════════════════════════════════════ */}
+        {/* SECTION 6 — COURSE CONCEPTS */}
         <Section className="max-w-5xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">Kaggle × Google</p>
@@ -545,9 +529,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 7 — TECH STACK
-        ══════════════════════════════════════ */}
+        {/* SECTION 7 — TECH STACK */}
         <Section className="max-w-4xl mx-auto px-6 py-20">
           <div className="text-center mb-10">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">Stack</p>
@@ -570,9 +552,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 8 — KAGGLE BADGE
-        ══════════════════════════════════════ */}
+        {/* SECTION 8 — KAGGLE BADGE */}
         <Section className="max-w-3xl mx-auto px-6 py-20 flex justify-center">
           <div className="relative w-full rounded-3xl border border-indigo-100 dark:border-indigo-500/25 bg-white dark:bg-gradient-to-br dark:from-indigo-950/60 dark:to-slate-900 p-10 text-center overflow-hidden shadow-xl dark:shadow-2xl dark:shadow-indigo-500/10">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-indigo-500/5 dark:bg-indigo-500/15 blur-[30px] sm:blur-[60px] rounded-full pointer-events-none" />
@@ -606,9 +586,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 9 — THE TEAM
-        ══════════════════════════════════════ */}
+        {/* SECTION 9 — THE TEAM */}
         <Section className="max-w-5xl mx-auto px-6 py-20">
           <div className="text-center mb-12">
             <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-3">Creators</p>
@@ -638,7 +616,7 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Syed Muhammad Hassan</h3>
-                  <p className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold mt-0.5">Backend Engineer & AI Agents</p>
+                  <p className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold mt-0.5">Frontend-Backend Engineer & AI Agents</p>
                 </div>
               </div>
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
@@ -727,9 +705,7 @@ export default function AboutPage() {
           </div>
         </Section>
 
-        {/* ══════════════════════════════════════
-            SECTION 10 — FOOTER
-        ══════════════════════════════════════ */}
+        {/* SECTION 10 — FOOTER */}
         <footer className="border-t border-slate-200 dark:border-slate-800/60 bg-slate-100 dark:bg-slate-950 transition-colors duration-300">
           <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-5 text-xs text-slate-500 dark:text-slate-400">
             <p className="font-semibold text-slate-700 dark:text-slate-100">

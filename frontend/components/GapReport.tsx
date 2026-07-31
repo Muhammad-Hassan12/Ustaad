@@ -30,7 +30,6 @@ export default function GapReport({ data }: GapReportProps) {
     const score = data.overall_readiness_score;
     const circumference = 251.2;
     const offset = circumference - (circumference * score) / 100;
-    // Trigger animation by setting the value after a short delay
     requestAnimationFrame(() => {
       if (circleRef.current) {
         circleRef.current.style.transition = "stroke-dashoffset 1.2s ease-out";

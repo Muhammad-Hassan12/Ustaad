@@ -484,7 +484,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
     <td align="center">
       <img src="https://github.com/Muhammad-Hassan12.png" width="80" style="border-radius:50%"/><br/>
       <b>Syed Muhammad Hassan</b><br/>
-      <sub>Backend Architecture & AI Agent Pipeline</sub><br/>
+      <sub>Frontend & Backend Architecture & AI Agent Pipeline</sub><br/>
       <a href="https://github.com/Muhammad-Hassan12">GitHub</a> •
       <a href="https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/">LinkedIn</a>
     </td>

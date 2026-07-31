@@ -39,37 +39,31 @@ def parse_gemini_json(text: str) -> dict:
     leading/trailing text, nested code blocks, trailing commas,
     and Python-like dictionary representations (single quotes).
     """
-    # 1. Try direct parse first
     try:
         return json.loads(text.strip())
     except json.JSONDecodeError:
         pass
 
-    # Strip markdown code block fences
     clean = re.sub(r"```(?:json)?\s*", "", text).strip()
     clean = clean.rstrip("`").strip()
 
-    # 2. Try to extract JSON object/array from surrounding text
     for start_char, end_char in [("{", "}"), ("[", "]")]:
         start_idx = clean.find(start_char)
         end_idx = clean.rfind(end_char)
         if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
             block = clean[start_idx : end_idx + 1]
             
-            # Try to load directly
             try:
                 return json.loads(block)
             except json.JSONDecodeError:
                 pass
                 
-            # Try cleaning trailing commas (very common with local LLMs)
             try:
                 cleaned_block = re.sub(r',(\s*[\]}])', r'\1', block)
                 return json.loads(cleaned_block)
             except json.JSONDecodeError:
                 pass
                 
-            # Try ast.literal_eval fallback (excellent for single-quoted dict strings)
             try:
                 block_py = block.replace("true", "True").replace("false", "False").replace("null", "None")
                 evaluated = ast.literal_eval(block_py)
@@ -78,7 +72,6 @@ def parse_gemini_json(text: str) -> dict:
             except Exception:
                 pass
 
-    # 3. Last resort: try ast.literal_eval on the entire cleaned text
     try:
         clean_py = clean.replace("true", "True").replace("false", "False").replace("null", "None")
         evaluated = ast.literal_eval(clean_py)
