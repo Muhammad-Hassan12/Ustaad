@@ -60,7 +60,7 @@ Every year, **tens of thousands of CS and IT graduates** enter Pakistan's techno
 
 ## 🚀 Live Demo
 
-> 🔗 **[Watch the 5-minute demo video on YouTube](#)** *(link to be added)*
+> 🔗 **[Watch the 5-minute demo video on YouTube](https://youtu.be/BKjF1yd-Ez0)**
 
 The demo walks through a real CV submission, live pipeline execution with SSE streaming, and the full dossier output.
 
@@ -446,7 +446,6 @@ CORS_ORIGINS=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-> ⚠️ **Never commit `.env` files.** Both are listed in `.gitignore`. Use `.env.example` files as templates.
 
 ---
 
