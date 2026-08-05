@@ -11,7 +11,19 @@ import { subscribeToPipeline } from "@/lib/sse";
 import { getPipelineResults, getDossierUrl } from "@/lib/api";
 import { MessageSquare, Download, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { CardSkeleton } from "@/components/Skeleton";
+
+interface SessionData {
+  status?: "pending" | "running" | "complete" | "error";
+  agents_completed?: string[];
+  current_agent?: string;
+  error_message?: string;
+  market_data?: Parameters<typeof MarketSnapshot>[0]["data"];
+  gap_data?: Parameters<typeof GapReport>[0]["data"];
+  roadmap_data?: Parameters<typeof RoadmapTimeline>[0]["data"];
+  cv_rewrite_data?: Parameters<typeof CVComparison>[0]["data"];
+  cv_text?: string;
+  [key: string]: unknown;
+}
 
 export default function DashboardPage() {
   const params = useParams();
@@ -22,9 +34,8 @@ export default function DashboardPage() {
   const [completedAgents, setCompletedAgents] = useState<string[]>([]);
   const [currentAgent, setCurrentAgent] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sessionData, setSessionData] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<SessionData | null>(null);
 
-  // Fetch updated results from DB — stable reference with useCallback
   const refreshResults = useCallback(async () => {
     try {
       const data = await getPipelineResults(sessionId);
@@ -41,10 +52,8 @@ export default function DashboardPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    // Initial fetch to capture current state if page reloads
     refreshResults();
 
-    // Subscribe to SSE updates
     const unsubscribe = subscribeToPipeline(
       sessionId,
       (event) => {
@@ -70,7 +79,6 @@ export default function DashboardPage() {
         }
       },
       () => {
-        // SSE connection closed — do a final refresh
         refreshResults();
       }
     );
@@ -87,29 +95,28 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+    <main className="flex-1 py-10 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto w-full bg-ink">
       {/* Status banner */}
       {status === "running" && currentAgent && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center gap-3 text-sm text-indigo-700 dark:text-indigo-300 animate-fadeInUp">
-          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+        <div className="mb-8 px-5 py-3.5 rounded-sm bg-teal/10 border-l-4 border-teal text-parchment flex items-center gap-3 text-sm font-body animate-fadeInUp">
+          <Loader2 className="w-4 h-4 text-teal animate-spin shrink-0" />
           <span>
-            <span className="font-semibold">Career OS is running</span> — agents are analyzing your profile in real-time.
+            <span className="font-semibold text-teal font-mono uppercase tracking-wider">Career OS Active</span> — AI agents are analyzing your profile in real-time.
           </span>
         </div>
       )}
       {status === "complete" && (
-        <div className="mb-6 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-3 text-sm text-emerald-700 dark:text-emerald-300 animate-fadeInUp">
-          <Sparkles className="w-4 h-4 shrink-0" />
+        <div className="mb-8 px-5 py-3.5 rounded-sm bg-brass/10 border-l-4 border-brass text-parchment flex items-center gap-3 text-sm font-body animate-fadeInUp">
+          <Sparkles className="w-4 h-4 text-brass shrink-0" />
           <span>
-            <span className="font-semibold">Analysis complete!</span> All agents finished. Start your mock interview or download your career dossier.
+            <span className="font-semibold text-brass font-mono uppercase tracking-wider">Analysis Complete</span> — All agents finished. Proceed to your AI mock interview or download your dossier.
           </span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-        {/* Left Side Stepper (Span 4) */}
-        <div className="lg:col-span-4 sticky top-24 flex flex-col gap-4">
+        {/* Top/Left Column — Pipeline Stepper & Quick Actions (Span 4) */}
+        <div className="lg:col-span-4 sticky top-24 flex flex-col gap-5">
           <PipelineProgress
             completedAgents={completedAgents}
             currentAgent={currentAgent}
@@ -126,44 +133,41 @@ export default function DashboardPage() {
             >
               <button
                 onClick={handleStartInterview}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 cursor-pointer transition-all text-sm"
+                className="w-full py-3.5 px-4 rounded-sm bg-brass text-ink font-body font-semibold flex items-center justify-center gap-2.5 hover:bg-brass/90 transition-colors shadow-md cursor-pointer text-sm"
               >
-                <MessageSquare size={16} /> Start Mock Interview
+                <MessageSquare size={16} /> Start AI Mock Interview
               </button>
               <button
                 onClick={handleDownloadDossier}
-                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all text-sm"
+                className="w-full py-3.5 px-4 rounded-sm border border-brass/40 text-brass bg-transparent font-body font-semibold flex items-center justify-center gap-2.5 hover:bg-brass/10 transition-colors shadow-sm cursor-pointer text-sm"
               >
-                <Download size={16} /> Download Career Dossier
+                <Download size={16} /> Download Career Dossier (PDF)
               </button>
             </motion.div>
           )}
         </div>
 
-        {/* Right Side Analysis Panels (Span 8) */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        {/* Main Analysis Column (Span 8) */}
+        <div className="lg:col-span-8 flex flex-col gap-8">
           {completedAgents.length === 0 && status !== "error" && (
             <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center justify-center py-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center shadow-sm">
-                <div className="relative mb-4">
-                  <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
-                    <Loader2 className="w-7 h-7 text-indigo-500 animate-spin" />
-                  </div>
-                  <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
-                </div>
-                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
-                  Warming up Career OS...
+              <div className="flex flex-col items-center justify-center py-16 bg-parchment text-ink border border-brass/40 rounded-sm p-8 text-center shadow-lg relative">
+                <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-brass z-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-brass z-10 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
+                <Loader2 className="w-8 h-8 text-brass animate-spin mb-4" />
+                <h3 className="font-display text-2xl text-ink">
+                  Initializing Career OS...
                 </h3>
-                <p className="text-xs text-slate-500 mt-1.5 max-w-xs leading-relaxed">
-                  Ustaad is parsing your profile and fetching live job market insights from Pakistan. This takes 2–4 minutes.
+                <p className="font-body text-xs text-ink/70 mt-2 max-w-sm leading-relaxed">
+                  Ustaad is parsing your profile and querying real-time Pakistani tech job listings. This process takes 2–4 minutes.
                 </p>
               </div>
-              <CardSkeleton />
-              <CardSkeleton />
             </div>
           )}
 
-          {/* Render cards progressively */}
+          {/* Render Cards Progressively as agents complete */}
           {completedAgents.includes("market") && sessionData?.market_data && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -202,7 +206,7 @@ export default function DashboardPage() {
             >
               <CVComparison
                 data={sessionData.cv_rewrite_data}
-                originalSummary={sessionData.cv_text}
+                originalSummary={sessionData.cv_text || null}
               />
             </motion.div>
           )}
