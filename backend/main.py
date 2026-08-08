@@ -28,9 +28,11 @@ async def health():
 from routers.pipeline import router as pipeline_router
 from routers.interview import router as interview_router
 from routers.export import router as export_router
+from routers.keys import router as keys_router
 
 app.include_router(pipeline_router)
 app.include_router(interview_router)
 app.include_router(export_router)
+app.include_router(keys_router)
 
 

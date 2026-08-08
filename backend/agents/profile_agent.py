@@ -6,9 +6,10 @@ async def run_profile_agent(
     target_role: str,
     target_city: str,
     experience_years: float,
-    education_level: str
+    education_level: str,
+    api_key: str = None
 ) -> dict:
-    model = get_model(PROFILE_SYSTEM_PROMPT)
+    model = get_model(PROFILE_SYSTEM_PROMPT, api_key=api_key)
     prompt = PROFILE_USER_TEMPLATE.format(
         cv_text=cv_text,
         target_role=target_role,

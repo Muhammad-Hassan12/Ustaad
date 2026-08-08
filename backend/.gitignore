@@ -1,6 +1,28 @@
-venv/
-__pycache__/
-*.pyc
+# Environment variables & secrets (CRITICAL: never commit API keys)
 .env
-*.egg-info/
-dist/
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Virtual environment & dependencies
+venv/
+.venv/
+env/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Binary PDFs & temporary test files
+*.pdf
+
+# OS & Editor metadata
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

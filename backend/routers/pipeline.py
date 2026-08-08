@@ -1,8 +1,9 @@
-from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, BackgroundTasks, HTTPException, Header
 from fastapi.responses import StreamingResponse
 from tools.cv_parser import extract_cv_text, CVParseError
 from agents.orchestrator import run_pipeline
 from db.supabase_client import create_session, get_session
+from typing import Optional
 import asyncio
 import json
 
@@ -23,6 +24,7 @@ async def start_pipeline(
     target_city: str = Form(...),
     experience_years: float = Form(0.0),
     education_level: str = Form("Bachelor's"),
+    x_gemini_api_key: Optional[str] = Header(default=None),
 ):
     # Validate file type
     # Check both the content_type and file extension to be robust
@@ -68,6 +70,7 @@ async def start_pipeline(
         run_pipeline,
         session_id, cv_text, target_role.strip(), target_city.strip(),
         experience_years, education_level, queue,
+        api_key=x_gemini_api_key,
     )
 
     return {"session_id": session_id}

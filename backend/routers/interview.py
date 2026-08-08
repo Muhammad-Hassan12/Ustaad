@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from pydantic import BaseModel
+from typing import Optional
 from agents.interview_agent import generate_interview_questions, evaluate_answer
 from db.supabase_client import get_session, supabase
 import json
@@ -15,12 +16,15 @@ class AnswerPayload(BaseModel):
     answer: str
 
 @router.post("/start/{session_id}")
-async def start_interview(session_id: str):
+async def start_interview(
+    session_id: str,
+    x_gemini_api_key: Optional[str] = Header(default=None),
+):
     session = await get_session(session_id)
     profile_data = session.get("profile_data", {})
     market_data = session.get("market_data", {})
 
-    questions = await generate_interview_questions(profile_data, market_data)
+    questions = await generate_interview_questions(profile_data, market_data, api_key=x_gemini_api_key)
 
     result = supabase.table("interview_sessions").insert({
         "session_id": session_id,
@@ -46,7 +50,10 @@ async def start_interview(session_id: str):
     }
 
 @router.post("/answer")
-async def submit_answer(payload: AnswerPayload):
+async def submit_answer(
+    payload: AnswerPayload,
+    x_gemini_api_key: Optional[str] = Header(default=None),
+):
     if len(payload.answer) > MAX_ANSWER_LENGTH:
         return {"error": f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters."}
 
@@ -71,7 +78,8 @@ async def submit_answer(payload: AnswerPayload):
         question=current_q["question"],
         what_looking_for=current_q.get("what_interviewer_looks_for", ""),
         candidate_answer=payload.answer,
-        question_number=current_index + 1
+        question_number=current_index + 1,
+        api_key=x_gemini_api_key,
     )
 
     answers = interview["answers"] or []
