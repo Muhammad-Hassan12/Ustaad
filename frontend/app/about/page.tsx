@@ -9,7 +9,7 @@ import {
   Layers, Search, Globe, Award,
   UserSearch, TrendingUp, GitCompare, Map, FileSignature, Mic, Download,
   Zap, Database, FileText, Palette, Upload, ScanLine, BrainCircuit,
-  BarChart3, GitBranch, Shield, RefreshCcw, BookOpen
+  BarChart3, GitBranch, Shield, RefreshCcw, BookOpen, Key
 } from "lucide-react";
 
 function GithubIcon({ size = 16, className = "" }: { size?: number; className?: string }) {
@@ -144,6 +144,13 @@ const CONCEPTS = [
     tag: "System Reliability",
     desc: "Live SSE streaming via asyncio.Queue. Exponential backoff with 8 retries. Automatic failover to a secondary model if primary API limits are exceeded.",
     code: "wait = min(2 ** attempt, 15)  # backoff",
+  },
+  {
+    icon: Key,
+    title: "Privacy-First BYOK Architecture",
+    tag: "Security & Freedom",
+    desc: "Bring Your Own Gemini Key (BYOK) support with zero-quota key validation via /api/keys/validate. Keys are saved strictly in browser localStorage, masked in the UI, and transmitted via encrypted HTTPS headers without server persistence.",
+    code: `headers: { 'X-Gemini-API-Key': userKey }`,
   },
 ];
 
@@ -400,6 +407,57 @@ export default function AboutPage() {
               <span className="font-body text-[10px] text-warm-gray">{tech.category}</span>
             </div>
           ))}
+        </div>
+      </AnimatedSection>
+
+      {/* 8.5 Common Questions (FAQ) Section */}
+      <AnimatedSection className="flex flex-col gap-8 max-w-3xl mx-auto w-full">
+        <div className="text-center">
+          <h2 className="font-display text-3xl md:text-4xl text-parchment">Common Questions</h2>
+          <p className="font-body text-xs text-warm-gray mt-1">
+            Everything you need to know about API keys, privacy, and access
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
+            <h3 className="font-display text-xl text-brass">
+              Why does Ustaad ask for an API key?
+            </h3>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Ustaad runs on Google&apos;s free-tier Gemini API by default. This free tier is shared across everyone using the platform and has a limited number of requests per day — during busy peak periods, it may run low temporarily.
+            </p>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Adding your own free Gemini API key takes about 30 seconds (no credit card required) at{" "}
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brass underline hover:text-brass/80 font-medium"
+              >
+                aistudio.google.com/apikey
+              </a>
+              . Your key is stored solely in your local browser storage and transmitted via encrypted HTTPS headers — Ustaad never saves it to any database.
+            </p>
+          </div>
+
+          <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
+            <h3 className="font-display text-xl text-brass">
+              Is my CV or data stored anywhere?
+            </h3>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Your CV text and analysis results are stored in Supabase, tied to your unique session link. Anyone with that exact link can view your dashboard, interview, and dossier... treat it like a private link and don't share it publicly. There's no account or sign-in; the link itself is your access. This data is never used to train any AI model or shared with third parties.
+            </p>
+          </div>
+
+          <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
+            <h3 className="font-display text-xl text-brass">
+              Is Ustaad really free to use?
+            </h3>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Yes, 100% free. The full 7-agent pipeline market research, gap analysis, roadmap, ATS CV rewrite, mock interview, and PDF dossier... is completely free. If you bring your own Gemini key, it is also free under Google&apos;s standard free-tier limits.
+            </p>
+          </div>
         </div>
       </AnimatedSection>
 

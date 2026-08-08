@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PipelineProgress from "@/components/PipelineProgress";
 import MarketSnapshot from "@/components/MarketSnapshot";
@@ -9,7 +9,7 @@ import RoadmapTimeline from "@/components/RoadmapTimeline";
 import CVComparison from "@/components/CVComparison";
 import { subscribeToPipeline } from "@/lib/sse";
 import { getPipelineResults, getDossierUrl } from "@/lib/api";
-import { MessageSquare, Download, Loader2, Sparkles } from "lucide-react";
+import { MessageSquare, Download, Loader2, Sparkles, Copy, Check, Key } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SessionData {
@@ -17,6 +17,17 @@ interface SessionData {
   agents_completed?: string[];
   current_agent?: string;
   error_message?: string;
+  target_role?: string;
+  target_city?: string;
+  // profile_data is returned by the backend and used for session metadata
+  profile_data?: {
+    name?: string;
+    location?: string;
+    summary?: string;
+    education?: string;
+    experience_years?: number;
+    skills?: string[];
+  };
   market_data?: Parameters<typeof MarketSnapshot>[0]["data"];
   gap_data?: Parameters<typeof GapReport>[0]["data"];
   roadmap_data?: Parameters<typeof RoadmapTimeline>[0]["data"];
@@ -35,13 +46,48 @@ export default function DashboardPage() {
   const [currentAgent, setCurrentAgent] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [copied, setCopied] = useState(false);
+  // Guard flag to ensure saveToRecentSessions fires exactly once per session
+  const sessionSavedRef = useRef(false);
+
+  const saveToRecentSessions = useCallback((role?: string, city?: string) => {
+    if (typeof window === "undefined" || !sessionId) return;
+    try {
+      const stored = localStorage.getItem("ustaad_recent_sessions");
+      let list: Array<{ id: string; role: string; city: string; timestamp: number }> = stored ? JSON.parse(stored) : [];
+      list = list.filter((s) => s.id !== sessionId);
+      list.unshift({
+        id: sessionId,
+        role: role || "Career Analysis",
+        city: city || "Pakistan",
+        timestamp: Date.now(),
+      });
+      localStorage.setItem("ustaad_recent_sessions", JSON.stringify(list.slice(0, 10)));
+    } catch (e) {
+      console.error("Failed to save recent session:", e);
+    }
+  }, [sessionId]);
+
+  const handleCopySessionId = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(sessionId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const refreshResults = useCallback(async () => {
     try {
       const data = await getPipelineResults(sessionId);
       if (data && !data.error) {
         setSessionData(data);
-        if (data.status) setStatus(data.status);
+        if (data.status) {
+          setStatus(data.status);
+          if (data.status === "complete" && !sessionSavedRef.current) {
+            sessionSavedRef.current = true;
+            saveToRecentSessions(data.target_role, data.target_city);
+          }
+        }
         if (data.agents_completed) setCompletedAgents(data.agents_completed);
         if (data.current_agent) setCurrentAgent(data.current_agent);
         if (data.error_message) setErrorMessage(data.error_message);
@@ -49,7 +95,7 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Failed to load results:", err);
     }
-  }, [sessionId]);
+  }, [sessionId, saveToRecentSessions]);
 
   useEffect(() => {
     refreshResults();
@@ -143,6 +189,43 @@ export default function DashboardPage() {
               >
                 <Download size={16} /> Download Career Dossier (PDF)
               </button>
+
+              {/* Copy Session ID Card — Only provided after full analysis completes */}
+              <div className="bg-parchment text-ink rounded-sm border border-brass/40 p-4 flex flex-col gap-2.5 shadow-md relative paper-grain mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-bold text-brass uppercase tracking-wider flex items-center gap-1.5">
+                    <Key size={13} /> Session Reference ID
+                  </span>
+                  <span className="font-mono text-[10px] text-ink/50 bg-ink/5 px-2 py-0.5 rounded-sm">
+                    Complete
+                  </span>
+                </div>
+
+                <div className="p-2 bg-ink/5 border border-ink/15 rounded-sm font-mono text-[11px] text-ink/80 truncate select-all">
+                  {sessionId}
+                </div>
+
+                <button
+                  onClick={handleCopySessionId}
+                  className="w-full py-2 px-3 rounded-sm border border-brass/40 text-brass hover:bg-brass/10 font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {copied ? (
+                    <>
+                      <Check size={14} className="text-teal" />
+                      <span className="text-teal">Session ID Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Copy Session ID</span>
+                    </>
+                  )}
+                </button>
+
+                <p className="font-body text-[11px] text-ink/60 leading-tight">
+                  Keep this ID to return to your analysis dashboard, mock interview, or dossier anytime via &quot;Resume Session&quot;.
+                </p>
+              </div>
             </motion.div>
           )}
         </div>

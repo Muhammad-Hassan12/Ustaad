@@ -207,7 +207,7 @@ async def call_gemini(model: genai.GenerativeModel, prompt: str, max_retries: in
             last_error = e
             err_str = str(e).lower()
             
-            # If we have a Kaggle backup, attempt failover immediately
+            # If Ustaad has a Kaggle backup, attempt failover immediately
             if kaggle_url:
                 logger.warning(f"Gemini call failed (Error: {e}). Attempting failover to secondary Kaggle Qwen model...")
                 try:

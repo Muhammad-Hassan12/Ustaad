@@ -102,10 +102,16 @@ export default function DossierPage() {
     setTimeout(() => setDownloading(false), 2000);
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleShare = async () => {
+    // Wrap clipboard write in try/catch — clipboard API may be blocked
+    // on HTTP (non-HTTPS) contexts or by browser security settings.
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this link to share your dossier:", window.location.href);
+    }
   };
 
   if (loading) {

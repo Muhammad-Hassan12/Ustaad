@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from db.supabase_client import get_session
 from tools.pdf_generator import generate_career_dossier
@@ -8,8 +8,9 @@ router = APIRouter(prefix="/api/export")
 @router.get("/dossier/{session_id}")
 async def export_dossier(session_id: str):
     session = await get_session(session_id)
+    # Return proper HTTP 404 instead of JSON error with status 200
     if not session:
-        return {"error": "Session not found"}
+        raise HTTPException(status_code=404, detail="Session not found. The session may have expired or the ID is incorrect.")
 
     pdf_bytes = generate_career_dossier(session)
     # Safely get candidate name or default to candidate

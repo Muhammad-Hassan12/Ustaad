@@ -41,8 +41,6 @@ export default function AnimatedCounter({
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / durationMs, 1);
-
-      // Ease-out cubic for a satisfying deceleration
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayValue(eased * value);
 

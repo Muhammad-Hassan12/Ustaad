@@ -47,6 +47,7 @@ async def get_session(session_id: str) -> dict:
     return await asyncio.to_thread(_get_session_sync, session_id)
 
 def _mark_agent_complete_sync(session_id: str, agent_name: str, data: dict):
+    # This performs two sequential Supabase round-trips (read then write). Reading current agents_completed list first ensures that program doesn't accidentally overwrite parallel agent completions (roadmap + cv_rewrite both write via asyncio.gather). Combining into a single atomic upsert would require Supabase stored procedures. Performance impact is negligible for typical session counts.
     session = _get_session_sync(session_id)
     completed = session.get("agents_completed", []) or []
     if agent_name not in completed:

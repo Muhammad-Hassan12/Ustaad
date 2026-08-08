@@ -7,10 +7,12 @@ import CVUpload from "@/components/CVUpload";
 import LedgerLine from "@/components/LedgerLine";
 import AnimatedSection, { StaggerChild } from "@/components/AnimatedSection";
 import { startPipeline } from "@/lib/api";
+import ApiKeyModal from "@/components/ApiKeyModal";
+import ResumeSessionModal from "@/components/ResumeSessionModal";
 import {
   ArrowRight, Loader2, Sparkles, ChevronDown, AlertCircle,
   UserSearch, TrendingUp, GitCompare, Map, FileSignature, Mic, Download,
-  ShieldCheck, Zap, Globe
+  ShieldCheck, Zap, Globe, Key
 } from "lucide-react";
 
 const DEFAULT_CITIES = [
@@ -50,8 +52,20 @@ export default function Home() {
   const [educationLevel, setEducationLevel] = useState("Bachelor's");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+  const [hasCustomKey, setHasCustomKey] = useState(false);
+
+  const checkKeyStatus = () => {
+    if (typeof window !== "undefined") {
+      const key = localStorage.getItem("gemini_api_key");
+      setHasCustomKey(!!(key && key.trim()));
+    }
+  };
 
   useEffect(() => {
+    checkKeyStatus();
+
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -340,7 +354,27 @@ export default function Home() {
                 )}
               </button>
               <p className="text-center font-mono text-[11px] text-ink/60 mt-3">
-                Analysis takes 2–4 minutes · Powered by Google Gemini 2.5 Flash
+                Analysis takes 2–4 min · Powered by Gemini 2.5
+              </p>
+              <p className="text-center font-body text-xs text-ink/60 mt-1">
+                {hasCustomKey ? "Using custom Gemini API key — " : "Using shared quota — "}
+                <button
+                  type="button"
+                  onClick={() => setIsKeyModalOpen(true)}
+                  className="text-brass underline hover:text-brass/80 cursor-pointer font-medium"
+                >
+                  {hasCustomKey ? "manage your key →" : "add your own key for guaranteed speed →"}
+                </button>
+              </p>
+              <p className="text-center font-body text-[11px] text-ink/50 mt-3 border-t border-ink/10 pt-3">
+                Have a previous Session ID?{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsResumeModalOpen(true)}
+                  className="text-brass underline hover:text-brass/80 font-medium cursor-pointer"
+                >
+                  Resume Analysis →
+                </button>
               </p>
             </div>
           </form>
@@ -458,6 +492,17 @@ export default function Home() {
           </a>
         </div>
       </AnimatedSection>
+
+      <ApiKeyModal
+        isOpen={isKeyModalOpen}
+        onClose={() => setIsKeyModalOpen(false)}
+        onKeyUpdated={checkKeyStatus}
+      />
+
+      <ResumeSessionModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+      />
     </main>
   );
 }

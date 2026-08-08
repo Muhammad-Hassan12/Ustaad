@@ -23,16 +23,17 @@
 1. [The Problem & Mission](#-the-problem--mission)
 2. [Live Demo](#-live-demo)
 3. [Competition Track](#-competition-track)
-4. [Multi-Agent Architecture](#️-multi-agent-architecture--pipeline)
-5. [The 5+2 Agents — Detailed Breakdown](#-the-52-agents--detailed-breakdown)
-6. [Course Concepts Demonstrated](#-course-concepts-demonstrated)
-7. [Tech Stack](#️-tech-stack)
-8. [Project Structure](#-project-structure)
-9. [Setup & Installation](#-setup--installation)
-10. [Environment Variables](#-environment-variables)
-11. [API Reference](#-api-reference)
-12. [The Team](#-the-team)
-13. [License](#-license)
+4. [Bring Your Own Key (BYOK) Feature](#-byok--bring-your-own-gemini-key)
+5. [Multi-Agent Architecture](#️-multi-agent-architecture--pipeline)
+6. [The 5+2 Agents — Detailed Breakdown](#-the-52-agents--detailed-breakdown)
+7. [Course Concepts Demonstrated](#-course-concepts-demonstrated)
+8. [Tech Stack](#️-tech-stack)
+9. [Project Structure](#-project-structure)
+10. [Setup & Installation](#-setup--installation)
+11. [Environment Variables](#-environment-variables)
+12. [API Reference](#-api-reference)
+13. [The Team](#-the-team)
+14. [License](#-license)
 
 ---
 
@@ -55,6 +56,18 @@ Every year, **tens of thousands of CS and IT graduates** enter Pakistan's techno
 - ✅ **ATS-optimized CV rewrite** with keyword improvements and before/after comparison
 - ✅ **Multi-turn mock interview** (15 questions) with AI scoring and feedback on each answer
 - ✅ **Downloadable PDF Career Dossier** summarizing all findings
+- ✅ **BYOK (Bring Your Own Key)** support — users can supply their Google AI Studio Gemini API key for private, unthrottled sessions
+
+---
+
+## 🔑 BYOK — Bring Your Own Gemini Key
+
+Ustaad includes full support for **Bring Your Own Gemini Key (BYOK)**:
+
+- **Privacy & Security First**: User keys are stored **strictly in local browser storage (`localStorage`)** and masked (`type="password"`) in the UI. Keys are **never** stored in the database, logged to any file, or echoed back in responses.
+- **Zero Quota Validation**: The frontend validates user keys via `GET /api/keys/validate` (which checks model availability without consuming generation quota) before launching pipeline tasks.
+- **Header Transmission**: When a key is active, requests include the `X-Gemini-API-Key` header over encrypted HTTPS.
+- **Seamless Fallback**: If no user key is provided, Ustaad transparently falls back to the server's default Gemini key, ensuring zero friction for first-time visitors.
 
 ---
 
@@ -451,28 +464,36 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## 📡 API Reference
 
+> 🔑 **BYOK Header Note**: Attach `X-Gemini-API-Key: <your_key>` header on `/api/keys/validate`, `/api/pipeline/start`, `/api/interview/start`, and `/api/interview/answer` endpoints to use a user-supplied key. If omitted, the server default key is used.
+
+### Key & Validation Endpoints
+
+| Method | Endpoint | Description | Header (Optional) |
+|---|---|---|---|
+| `GET` | `/health` | Backend health check | None |
+| `GET` | `/api/keys/validate` | Validate Gemini API key status without using quota | `X-Gemini-API-Key` |
+
 ### Pipeline Endpoints
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Backend health check |
-| `POST` | `/api/pipeline/start` | Upload CV (multipart form) + start pipeline. Returns `{ session_id }` |
-| `GET` | `/api/pipeline/status/{session_id}` | SSE stream of real-time pipeline events (`agent_start`, `agent_complete`, `pipeline_complete`, `error`) |
-| `GET` | `/api/pipeline/results/{session_id}` | Full JSON session data for a completed (or in-progress) session |
+| Method | Endpoint | Description | Header (Optional) |
+|---|---|---|---|
+| `POST` | `/api/pipeline/start` | Upload CV (multipart form) + start pipeline. Returns `{ session_id }` | `X-Gemini-API-Key` |
+| `GET` | `/api/pipeline/status/{session_id}` | SSE stream of real-time pipeline events (`agent_start`, `agent_complete`, `pipeline_complete`, `error`) | None |
+| `GET` | `/api/pipeline/results/{session_id}` | Full JSON session data for a completed (or in-progress) session | None |
 
 ### Interview Endpoints
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/interview/start/{session_id}` | Generate 15 interview questions and create an interview session. Returns first question |
-| `POST` | `/api/interview/answer` | Submit an answer. Body: `{ session_id, interview_id, question_id, answer }`. Returns evaluation + next question |
-| `GET` | `/api/interview/summary/{session_id}` | Retrieve full interview session data (all questions, answers, scores, final score) |
+| Method | Endpoint | Description | Header (Optional) |
+|---|---|---|---|
+| `POST` | `/api/interview/start/{session_id}` | Generate 15 interview questions and create an interview session. Returns first question | `X-Gemini-API-Key` |
+| `POST` | `/api/interview/answer` | Submit an answer. Body: `{ session_id, interview_id, question_id, answer }`. Returns evaluation + next question | `X-Gemini-API-Key` |
+| `GET` | `/api/interview/summary/{session_id}` | Retrieve full interview session data (all questions, answers, scores, final score) | None |
 
 ### Export Endpoints
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/export/dossier/{session_id}` | Download Career Dossier as a styled PDF |
+| Method | Endpoint | Description | Header (Optional) |
+|---|---|---|---|
+| `GET` | `/api/export/dossier/{session_id}` | Download Career Dossier as a styled PDF | None |
 
 ---
 

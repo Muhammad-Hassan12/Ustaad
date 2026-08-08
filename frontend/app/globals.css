@@ -9,7 +9,7 @@
   --teal: #4A7C7C;
   --warm-gray: #8B8378;
   --critical-red: #B85450;
-  
+
   --background: #0B0F14;
   --foreground: #F5F0E6;
 }
@@ -28,7 +28,10 @@
     min-height: 100vh;
   }
 
-  h1, h2, h3, .display-text {
+  h1,
+  h2,
+  h3,
+  .display-text {
     font-family: var(--font-display), serif;
     letter-spacing: 0.01em;
   }
@@ -37,24 +40,25 @@
     font-family: var(--font-mono), monospace;
   }
 
-  /* Visible keyboard focus state — required accessibility */
   *:focus-visible {
     outline: 2px solid var(--brass);
     outline-offset: 2px;
   }
 
-  /* Custom scrollbar — manuscript theme */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background-color: #0B0F14;
   }
+
   ::-webkit-scrollbar-thumb {
     background-color: rgba(201, 169, 97, 0.3);
     border-radius: 2px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(201, 169, 97, 0.6);
   }
@@ -66,12 +70,13 @@
   }
 }
 
-/* === Animations === */
+/* Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -79,40 +84,44 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-fadeInUp {
   animation: fadeInUp 0.5s ease-out both;
 }
 
-/* Shimmer loading skeleton — ledger style */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(139, 131, 120, 0.08) 25%,
-    rgba(201, 169, 97, 0.15) 50%,
-    rgba(139, 131, 120, 0.08) 75%
-  );
+  background: linear-gradient(90deg,
+      rgba(139, 131, 120, 0.08) 25%,
+      rgba(201, 169, 97, 0.15) 50%,
+      rgba(139, 131, 120, 0.08) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* Respect reduced motion — required accessibility */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* === Paper Grain Texture === */
-/* Subtle noise overlay on parchment sections for manuscript authenticity */
+/* Paper Grain Texture */
 .paper-grain {
   position: relative;
 }
+
 .paper-grain::after {
   content: "";
   position: absolute;
@@ -125,10 +134,11 @@
   background-size: 128px 128px;
 }
 
-/* === Card Hover Micro-Interaction === */
+/* Card Hover Micro-Interaction */
 .card-hover {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
+
 .card-hover:hover {
   transform: translateY(-4px);
   box-shadow:
@@ -136,25 +146,24 @@
     0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* === Hero Headline Shimmer === */
+/* Hero Headline Shimmer */
 @keyframes shimmerText {
   0% {
     background-position: -200% center;
   }
+
   100% {
     background-position: 200% center;
   }
 }
 
 .text-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--parchment) 0%,
-    var(--parchment) 35%,
-    var(--brass) 50%,
-    var(--parchment) 65%,
-    var(--parchment) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--parchment) 0%,
+      var(--parchment) 35%,
+      var(--brass) 50%,
+      var(--parchment) 65%,
+      var(--parchment) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;

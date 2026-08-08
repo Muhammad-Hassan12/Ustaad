@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ustaad Frontend — Next.js 14 Application
 
-## Getting Started
+The web user interface for **Ustaad (اُستاد)** — an AI Career Operating System for Pakistani tech talent.
 
-First, run the development server:
+Built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Framer Motion**, and **Lucide Icons**, implementing a custom parchment & brass editorial manuscript design language.
+
+---
+
+## 🎨 Design Philosophy & Features
+
+- **Parchment & Brass Aesthetic**: Editorial, manuscript-styled UI with dark ink accents (`bg-ink`, `text-parchment`, `border-brass`).
+- **Real-time SSE Dashboard**: Live agent progress tracking with Server-Sent Events (`frontend/lib/sse.ts`) and zero page reloads.
+- **BYOK (Bring Your Own Key) Integration**:
+  - Secure modal dialog (`ApiKeyModal.tsx`) with password-masked key fields (`type="password"`).
+  - Quota-free key validation via `GET /api/keys/validate`.
+  - Client-side key persistence in browser `localStorage`.
+  - Automatic `X-Gemini-API-Key` header injection on pipeline start, interview start, and answer evaluation requests.
+- **Interactive AI Mock Interview Terminal**: Multi-turn Q&A interface with live scorecards and feedback rubrics.
+- **Responsive Layout**: Designed for seamless operation on mobile, tablet, and desktop viewports.
+
+---
+
+## 📁 Project Structure
+
+```
+frontend/
+├── app/
+│   ├── page.tsx               # Homepage with CV upload form & BYOK status caption
+│   ├── about/page.tsx         # Detailed About page with architecture & team breakdown
+│   ├── dashboard/[sessionId]/ # Live agent status & complete session metrics
+│   ├── interview/[sessionId]/ # Interactive AI Mock Interview Terminal
+│   └── dossier/[sessionId]/   # Career Dossier view & PDF export trigger
+├── components/
+│   ├── ApiKeyModal.tsx        # 🔑 Privacy-first BYOK Key settings modal
+│   ├── Navbar.tsx             # Top navigation bar with BYOK status badge
+│   ├── CVUpload.tsx           # Drag-and-drop PDF upload component
+│   ├── LedgerLine.tsx         # Custom ledger line step indicator
+│   ├── PipelineProgress.tsx   # Live agent stepper component
+│   ├── MarketSnapshot.tsx     # Real-time job market demand component
+│   ├── GapReport.tsx          # 0–100 Readiness score & skill gap report
+│   ├── RoadmapTimeline.tsx    # 30/60/90-day learning roadmap
+│   ├── CVComparison.tsx       # ATS-optimized CV bullet rewrite comparison
+│   └── AnimatedSection.tsx    # Scroll & entrance animations via Framer Motion
+└── lib/
+    ├── api.ts                 # Fetch wrapper API functions & BYOK header handling
+    └── sse.ts                 # Server-Sent Events subscriber for live status stream
+```
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+
+- Node.js 18.x or higher
+- npm 9.x or higher
+
+### 1. Environment Setup
+
+Create a `.env.local` file in the `frontend` directory:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+# Or your deployed VPS backend URL:
+# NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Build for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

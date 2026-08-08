@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from agents.interview_agent import generate_interview_questions, evaluate_answer
@@ -21,6 +21,10 @@ async def start_interview(
     x_gemini_api_key: Optional[str] = Header(default=None),
 ):
     session = await get_session(session_id)
+    # Guard against empty session (UUID not found in DB)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found. Please start a new analysis.")
+
     profile_data = session.get("profile_data", {})
     market_data = session.get("market_data", {})
 
