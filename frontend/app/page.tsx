@@ -354,7 +354,7 @@ export default function Home() {
                 )}
               </button>
               <p className="text-center font-mono text-[11px] text-ink/60 mt-3">
-                Analysis takes 2–4 min · Powered by Gemini 2.5
+                Analysis takes 2–4 min · Powered by Gemini 3.1 Flash Lite
               </p>
               <p className="text-center font-body text-xs text-ink/60 mt-1">
                 {hasCustomKey ? "Using custom Gemini API key — " : "Using shared quota — "}
