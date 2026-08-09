@@ -257,6 +257,7 @@ ustaad/
 │   │   ├── __init__.py
 │   │   ├── pipeline.py             # POST /start, GET /status (SSE), GET /results
 │   │   ├── interview.py            # POST /start, POST /answer, GET /summary
+│   │   ├── keys.py                 # GET /validate (BYOK key validation)
 │   │   └── export.py               # GET /dossier/{session_id} → PDF download
 │   ├── tools/
 │   │   ├── __init__.py
@@ -265,28 +266,38 @@ ustaad/
 │   │   └── pdf_generator.py        # ReportLab career dossier builder
 │   ├── main.py                     # FastAPI app entry + CORS config
 │   ├── requirements.txt
+│   ├── generate_test_cv.py         # Script to generate a mock CV for testing
+│   ├── test_answer.py              # Tests for interview answering logic
+│   ├── test_pipeline.py            # Tests for the core pipeline
+│   ├── test_qwen.py                # Tests for Qwen fallback integration
 │   └── .env.example
 ├── frontend/
 │   ├── app/
-│   │   ├── page.tsx                # Landing page with CV upload form
 │   │   ├── about/page.tsx          # About page (team, architecture, features)
 │   │   ├── dashboard/[sessionId]/  # Live pipeline dashboard with SSE
-│   │   ├── interview/[sessionId]/  # Interactive mock interview terminal
 │   │   ├── dossier/[sessionId]/    # Full dossier results view
-│   │   ├── layout.tsx              # Root layout (nav, theme, footer)
+│   │   ├── interview/[sessionId]/  # Interactive mock interview terminal
 │   │   ├── globals.css             # Global styles & Tailwind base
 │   │   ├── icon.png                # App favicon (PNG)
-│   │   └── fonts/                  # Geist Sans & Mono font files
+│   │   ├── layout.tsx              # Root layout (nav, theme, footer)
+│   │   └── page.tsx                # Landing page with CV upload form
 │   ├── components/
-│   │   ├── PipelineProgress.tsx    # Real-time SSE-driven step tracker
+│   │   ├── AnimatedCounter.tsx     # Animated number counter utility
+│   │   ├── AnimatedSection.tsx     # Framer motion fade-in wrapper
+│   │   ├── ApiKeyModal.tsx         # BYOK configuration modal
 │   │   ├── CVComparison.tsx        # Before/after CV diff view
 │   │   ├── CVUpload.tsx            # Drag-and-drop PDF upload dropzone
+│   │   ├── ErrorBoundary.tsx       # React error boundary fallback
+│   │   ├── Footer.tsx              # Application footer
 │   │   ├── GapReport.tsx           # Skills gap visualization cards
+│   │   ├── LedgerLine.tsx          # Animated ledger line divider
 │   │   ├── MarketSnapshot.tsx      # Job market demand dashboard
+│   │   ├── Navbar.tsx              # Main application navigation
+│   │   ├── PipelineProgress.tsx    # Real-time SSE-driven step tracker
+│   │   ├── ResumeSessionModal.tsx  # Modal to resume a previous session
 │   │   ├── RoadmapTimeline.tsx     # 30/60/90 roadmap timeline
-│   │   ├── Skeleton.tsx            # Loading skeleton placeholders
-│   │   ├── ThemeToggle.tsx         # Dark/light mode toggle
-│   │   └── ErrorBoundary.tsx       # React error boundary fallback
+│   │   ├── ScrollProgress.tsx      # Scroll progress indicator
+│   │   └── Skeleton.tsx            # Loading skeleton placeholders
 │   ├── lib/
 │   │   ├── api.ts                  # Typed API fetch wrappers (with ngrok bypass)
 │   │   └── sse.ts                  # Custom fetch-based SSE stream reader
@@ -296,7 +307,12 @@ ustaad/
 │   ├── tailwind.config.ts
 │   ├── next.config.mjs
 │   ├── tsconfig.json
-│   └── .env.example
+│   ├── .env.example
+│   ├── .env.local
+│   └── .eslintrc.json
+├── docker-compose.yml              # Local backend containerization
+├── CONTRIBUTING.md                 # Contribution guidelines
+├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── README.md
 ├── LICENSE
 └── .gitignore
