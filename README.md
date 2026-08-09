@@ -16,6 +16,9 @@
 
 </div>
 
+## 🎥 Live Demo
+> Full walkthrough video coming soon — but major working preview is covered in this post (Excluding BYOK, Session ID Recall... etc) [LinkedIn Post](https://www.linkedin.com/posts/syed-muhammad-hassan-aa112928b_kaggle-googleai-aiagents-ugcPost-7492196798460096512-hgFf/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEZR4NkBOFjpVCOgh3VH-_Pbuq1LtVagS5M)
+
 ---
 
 ## 📋 Table of Contents
