@@ -21,19 +21,22 @@
 ## 📋 Table of Contents
 
 1. [The Problem & Mission](#-the-problem--mission)
-2. [Live Demo](#-live-demo)
-3. [Competition Track](#-competition-track)
-4. [Bring Your Own Key (BYOK) Feature](#-byok--bring-your-own-gemini-key)
-5. [Multi-Agent Architecture](#️-multi-agent-architecture--pipeline)
-6. [The 5+2 Agents — Detailed Breakdown](#-the-52-agents--detailed-breakdown)
-7. [Course Concepts Demonstrated](#-course-concepts-demonstrated)
-8. [Tech Stack](#️-tech-stack)
-9. [Project Structure](#-project-structure)
-10. [Setup & Installation](#-setup--installation)
-11. [Environment Variables](#-environment-variables)
-12. [API Reference](#-api-reference)
-13. [The Team](#-the-team)
-14. [License](#-license)
+2. [Competition Track](#-competition-track)
+3. [Bring Your Own Key (BYOK) Feature](#-byok--bring-your-own-gemini-key)
+4. [Multi-Agent Architecture](#️-multi-agent-architecture--pipeline)
+5. [The 5+2 Agents — Detailed Breakdown](#-the-52-agents--detailed-breakdown)
+6. [Course Concepts Demonstrated](#-course-concepts-demonstrated)
+7. [Tech Stack](#️-tech-stack)
+8. [Project Structure](#-project-structure)
+9. [Setup & Installation](#-setup--installation)
+10. [Local Deployment (Docker)](#-local-deployment-docker)
+11. [Testing](#-testing)
+12. [Environment Variables](#-environment-variables)
+13. [API Reference](#-api-reference)
+14. [Contributing & Code of Conduct](#-contributing--code-of-conduct)
+15. [Future Roadmap](#-future-roadmap)
+16. [The Team](#-the-team)
+17. [License](#-license)
 
 ---
 
@@ -68,16 +71,6 @@ Ustaad includes full support for **Bring Your Own Gemini Key (BYOK)**:
 - **Zero Quota Validation**: The frontend validates user keys via `GET /api/keys/validate` (which checks model availability without consuming generation quota) before launching pipeline tasks.
 - **Header Transmission**: When a key is active, requests include the `X-Gemini-API-Key` header over encrypted HTTPS.
 - **Seamless Fallback**: If no user key is provided, Ustaad transparently falls back to the server's default Gemini key, ensuring zero friction for first-time visitors.
-
----
-
-## 🚀 Live Demo
-
-> 🔗 **[Watch the 5-minute demo video on YouTube](https://youtu.be/BKjF1yd-Ez0)**
-
-The demo walks through a real CV submission, live pipeline execution with SSE streaming, and the full dossier output.
-
----
 
 ## 🏆 Competition Track
 
@@ -425,6 +418,34 @@ Frontend runs at `http://localhost:3000`
 
 ---
 
+## 🐳 Local Deployment (Docker)
+
+If you prefer to run the backend without manually setting up Python environments, you can use the provided `docker-compose.yml`. 
+
+> **Note**: This docker-compose is for the **backend only** to aid local development and exploration. The frontend is designed to be deployed separately (e.g., on Vercel). Supabase is also treated as an external managed service.
+
+```bash
+# Start the backend via Docker
+docker-compose up -d --build
+```
+The API will be available at `http://localhost:8000`.
+
+---
+
+## 🧪 Testing
+
+Before submitting any Pull Requests, please ensure all tests pass.
+
+```bash
+# Navigate to the backend
+cd backend
+
+# Run the test suite using pytest
+pytest
+```
+
+---
+
 ## 🔐 Environment Variables
 
 ### Backend (`backend/.env`)
@@ -497,6 +518,30 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ---
 
+## 🤝 Contributing & Code of Conduct
+
+We welcome contributions! Please review our [Contributing Guidelines](CONTRIBUTING.md) to understand our workflow, from forking the repository to submitting a Pull Request. 
+
+To ensure a welcoming and inclusive community for everyone, all participants must adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+---
+
+## 🔮 Future Roadmap
+
+**Portfolio & GitHub Audit Agent** — An 8th agent that reviews a candidate's actual GitHub repos and projects — commit consistency, README quality, and which projects are worth featuring. Pakistani employers increasingly screen on demonstrated work over transcripts, and right now Ustaad optimizes the CV but says nothing about the proof of work behind it.
+
+**Communication Coaching Layer** — An extension to the Interview Agent that scores clarity, structure, and confidence in spoken/typed answers, not just technical correctness. Pakistan's own tech industry body (P@SHA) ranks communication and adaptability as what actually gets candidates hired and promoted, above raw technical skill.
+
+**Employer-Side Mode** — Since the Market Intelligence Agent already tracks what Pakistani companies are hiring for in real time, the natural next step is a lightweight recruiter dashboard: companies post a role, and get a ranked shortlist of opted-in candidates whose gap profile matches. This turns Ustaad from a one-sided tool into a two-sided marketplace.
+
+**Smaller additions planned:**
+- Urdu language support across the full pipeline
+- Voice-based mock interview mode
+- Direct job application tracking per session
+- Multi-provider LLM support (OpenAI, Claude, local models via Ollama)
+
+---
+
 ## 👥 The Team
 
 <table>
@@ -552,6 +597,6 @@ limitations under the License.
 
 Built with ❤️ in Karachi, Pakistan 🇵🇰 · Powered by Gemini 2.5 Flash 🤖
 
-**[Try Ustaad](#)** · **[Watch Demo](#)** · **[Kaggle Competition](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)**
+**[Try Ustaad](https://www.ustaad.systems)** · **[Kaggle Competition](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)**
 
 </div>
