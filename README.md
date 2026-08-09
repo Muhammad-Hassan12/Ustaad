@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Kaggle Capstone](https://img.shields.io/badge/Kaggle-AI%20Agents%20Capstone%202026-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)
-[![Google Gemini](https://img.shields.io/badge/Powered%20By-Gemini%202.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
+[![Google Gemini](https://img.shields.io/badge/Powered%20By-Gemini%203.1%20Flash%20Lite-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-22c55e?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
@@ -151,17 +151,17 @@ Upload CV → [A1 Profile] → [A2 Market] → [A3 Gap]
 
 | # | Agent | Role | Input | Output | LLM |
 |---|---|---|---|---|---|
-| **A1** | **Profile Agent** | Parses raw CV text into a structured JSON resume profile (education, experience, skills, projects) | Raw CV text + target role + city + experience + education | `ProfileSchema` JSON | Gemini 2.5 Flash |
-| **A2** | **Market Intelligence Agent** | Runs 4 targeted Serper.dev Google searches for live Pakistani job market data, then passes results to Gemini for structured extraction | Target role + city | `MarketDataSchema` JSON | Gemini 2.5 Flash |
-| **A3** | **Gap Analysis Agent** | Compares candidate profile vs. market demand, computes a quantified readiness score (0–100) and lists critical skill gaps | A1 Profile + A2 Market data | `GapAnalysisSchema` JSON | Gemini 2.5 Flash |
-| **A4** | **Roadmap Agent** | Builds a milestone-driven 30/60/90-day learning plan with free resource links targeted at closing identified gaps | A3 Gap data | `RoadmapSchema` JSON | Gemini 2.5 Flash |
-| **A5** | **CV Rewrite Agent** | Rewrites CV bullet points and summary for ATS optimization; estimates ATS score improvement | A1 Profile + A2 Market + A3 Gap | `CVRewriteSchema` JSON | Gemini 2.5 Flash |
+| **A1** | **Profile Agent** | Parses raw CV text into a structured JSON resume profile (education, experience, skills, projects) | Raw CV text + target role + city + experience + education | `ProfileSchema` JSON | Gemini 3.1 Flash Lite |
+| **A2** | **Market Intelligence Agent** | Runs 4 targeted Serper.dev Google searches for live Pakistani job market data, then passes results to Gemini for structured extraction | Target role + city | `MarketDataSchema` JSON | Gemini 3.1 Flash Lite |
+| **A3** | **Gap Analysis Agent** | Compares candidate profile vs. market demand, computes a quantified readiness score (0–100) and lists critical skill gaps | A1 Profile + A2 Market data | `GapAnalysisSchema` JSON | Gemini 3.1 Flash Lite |
+| **A4** | **Roadmap Agent** | Builds a milestone-driven 30/60/90-day learning plan with free resource links targeted at closing identified gaps | A3 Gap data | `RoadmapSchema` JSON | Gemini 3.1 Flash Lite |
+| **A5** | **CV Rewrite Agent** | Rewrites CV bullet points and summary for ATS optimization; estimates ATS score improvement | A1 Profile + A2 Market + A3 Gap | `CVRewriteSchema` JSON | Gemini 3.1 Flash Lite |
 
 ### Interactive Modules (User-Triggered)
 
 | # | Module | Role | Input | Output | Engine |
 |---|---|---|---|---|---|
-| **A6** | **Interview Module** | Generates 15 role-specific questions (5 technical, 5 behavioral, 5 HR), then evaluates each user answer on a 1–10 rubric with detailed feedback | A1 Profile + A2 Market + user answers | Per-answer scoring + final percentage | Gemini 2.5 Flash |
+| **A6** | **Interview Module** | Generates 15 role-specific questions (5 technical, 5 behavioral, 5 HR), then evaluates each user answer on a 1–10 rubric with detailed feedback | A1 Profile + A2 Market + user answers | Per-answer scoring + final percentage | Gemini 3.1 Flash Lite |
 | **A7** | **Export Module** | Aggregates all pipeline outputs into a formatted, styled PDF Career Dossier using ReportLab | Full session data from Supabase | Downloadable PDF | ReportLab SDK |
 
 ---
@@ -218,7 +218,7 @@ This makes the pipeline resilient against malformed LLM responses across both Ge
 | **Markdown** | react-markdown | Rendering formatted AI responses |
 | **Backend** | Python 3.10+, FastAPI | Async REST API + SSE endpoint |
 | **PDF Parsing** | PyMuPDF (fitz) | CV text extraction from PDF uploads |
-| **AI/LLM** | Google Gemini 2.5 Flash | Core agent pipeline backbone |
+| **AI/LLM** | Google Gemini 3.1 Flash Lite | Core agent pipeline backbone |
 | **Search API** | Serper.dev | Real-time Google Search for job board grounding |
 | **Database** | Supabase (PostgreSQL) | Session state, agent outputs, interview history |
 | **PDF Generation** | ReportLab | Career Dossier PDF output |
@@ -453,7 +453,7 @@ pytest
 ```env
 # AI / LLM
 GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 
 # Search / Grounding
 SERPER_API_KEY=your_serper_dev_api_key_here
@@ -466,7 +466,7 @@ SUPABASE_SERVICE_KEY=your_supabase_service_role_key
 CORS_ORIGINS=http://localhost:3000
 
 # Optional: override default Gemini model
-# GEMINI_MODEL=gemini-2.5-flash
+# GEMINI_MODEL=gemini-3.1-flash-lite
 
 # Optional: secondary fallback model endpoint (OpenAI-compatible)
 # Used for rapid testing when Gemini free tier quota exhausts quickly.
@@ -595,7 +595,7 @@ limitations under the License.
 
 <div align="center">
 
-Built with ❤️ in Karachi, Pakistan 🇵🇰 · Powered by Gemini 2.5 Flash 🤖
+Built with ❤️ in Karachi, Pakistan 🇵🇰 · Powered by Gemini 3.1 Flash Lite 🤖
 
 **[Try Ustaad](https://www.ustaad.systems)** · **[Kaggle Competition](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)**
 

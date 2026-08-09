@@ -155,7 +155,7 @@ const CONCEPTS = [
 ];
 
 const TECH_STACK = [
-  { icon: Sparkles, name: "Gemini 2.5 Flash", category: "AI Orchestration" },
+  { icon: Sparkles, name: "Gemini 3.1 Flash Lite", category: "AI Orchestration" },
   { icon: Zap, name: "FastAPI", category: "Backend Engine" },
   { icon: Globe, name: "Next.js 14", category: "Frontend Framework" },
   { icon: Database, name: "Supabase", category: "Database & Storage" },
@@ -263,7 +263,7 @@ export default function AboutPage() {
         <div>
           <h2 className="font-display text-3xl md:text-4xl text-ink">7 AI Agents. One Career Dossier.</h2>
           <p className="font-body text-xs text-ink/70 mt-1">
-            Powered by Gemini 2.5 Flash — each agent handles one critical piece of your career puzzle.
+            Powered by Gemini 3.1 Flash Lite — each agent handles one critical piece of your career puzzle.
           </p>
         </div>
 

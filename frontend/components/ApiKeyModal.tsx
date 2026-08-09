@@ -143,7 +143,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }: ApiKeyMod
             <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
             <div>
               <span className="font-semibold block font-mono uppercase tracking-wider">
-                ✅ Custom Key Active ({statusResult?.model || "gemini-2.5-flash"})
+                ✅ Custom Key Active ({statusResult?.model || "gemini-3.1-flash-lite"})
               </span>
               <span className="opacity-90">
                 Your key will be used exclusively for your sessions on this browser.

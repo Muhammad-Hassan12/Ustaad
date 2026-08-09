@@ -20,7 +20,7 @@ logger = logging.getLogger("ustaad.agents")
 
 load_dotenv()
 
-DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
 def get_model(system_instruction: str, model_name: str = None, api_key: str = None) -> genai.GenerativeModel:
     """
