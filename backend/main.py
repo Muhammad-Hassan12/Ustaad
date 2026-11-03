@@ -1,11 +1,13 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
+load_dotenv(Path(__file__).resolve().parent / ".env")
 load_dotenv()
 
-app = FastAPI(title="Ustaad API", version="1.0.0")
+app = FastAPI(title="Ustaad API", version="2.0.0")
 
 origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 for port in ["3000", "3001", "3002"]:

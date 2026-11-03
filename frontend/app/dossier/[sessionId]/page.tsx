@@ -2,13 +2,34 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getPipelineResults, getDossierUrl } from "@/lib/api";
 import {
-  Download, Share2, ArrowLeft, Loader2, AlertCircle, FileText,
-  Star, Target, User, MapPin
+  getPipelineResults,
+  getDossierUrl,
+  getInterviewSummary,
+} from "@/lib/api";
+import {
+  Download,
+  Share2,
+  ArrowLeft,
+  Loader2,
+  AlertCircle,
+  FileText,
+  Star,
+  Target,
+  User,
+  MapPin,
+  Printer,
+  MessageSquare,
 } from "lucide-react";
 import AnimatedSection from "@/components/AnimatedSection";
 import AnimatedCounter from "@/components/AnimatedCounter";
+
+interface EducationObj {
+  degree?: string | null;
+  field?: string | null;
+  university?: string | null;
+  graduation_year?: number | null;
+}
 
 interface GapDetail {
   skill: string;
@@ -17,6 +38,11 @@ interface GapDetail {
 
 interface ProjectRewrite {
   name: string;
+  rewritten: string;
+}
+
+interface BulletRewrite {
+  original: string;
   rewritten: string;
 }
 
@@ -31,16 +57,36 @@ interface RoadmapWeek {
   tasks?: RoadmapTask[];
 }
 
+interface InterviewSummaryData {
+  id?: string;
+  final_score?: number | null;
+  scores?: Array<{
+    question_id?: string;
+    score?: number;
+    clarity_score?: number;
+    feedback_summary?: string;
+  }>;
+  answers?: Array<{
+    question_id?: string;
+    question?: string;
+    category?: string;
+    answer?: string;
+  }>;
+  error?: string;
+}
+
 interface DossierSessionData {
   target_role?: string;
   target_city?: string;
   error?: string;
   profile_data?: {
-    name?: string;
-    location?: string;
-    summary?: string;
-    education?: string;
+    name?: string | null;
+    location?: string | null;
+    summary?: string | null;
+    cv_summary_original?: string | null;
+    education?: EducationObj | string | null;
     experience_years?: number;
+    current_skills?: string[];
     skills?: string[];
   };
   market_data?: {
@@ -51,6 +97,7 @@ interface DossierSessionData {
   };
   gap_data?: {
     overall_readiness_score?: number;
+    jd_match_score?: number | null;
     summary?: string;
     critical_gaps?: GapDetail[];
   };
@@ -60,9 +107,21 @@ interface DossierSessionData {
   cv_rewrite_data?: {
     ats_score_estimate?: number;
     rewritten_summary?: string;
+    rewritten_experience_bullets?: BulletRewrite[];
     rewritten_projects?: ProjectRewrite[];
   };
   [key: string]: unknown;
+}
+
+function formatEducationSafe(edu: EducationObj | string | null | undefined): string | null {
+  if (!edu) return null;
+  if (typeof edu === "string") return edu;
+  const parts: string[] = [];
+  if (edu.degree) parts.push(edu.degree);
+  if (edu.field) parts.push(`in ${edu.field}`);
+  if (edu.university) parts.push(`— ${edu.university}`);
+  if (edu.graduation_year) parts.push(`(${edu.graduation_year})`);
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 export default function DossierPage() {
@@ -73,6 +132,7 @@ export default function DossierPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<DossierSessionData | null>(null);
+  const [interview, setInterview] = useState<InterviewSummaryData | null>(null);
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -81,11 +141,19 @@ export default function DossierPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getPipelineResults(sessionId);
+        const [data, interviewRes] = await Promise.all([
+          getPipelineResults(sessionId),
+          getInterviewSummary(sessionId).catch(() => null),
+        ]);
+
         if (data && !data.error) {
           setSession(data);
         } else {
           setError("Failed to retrieve dossier data.");
+        }
+
+        if (interviewRes && !interviewRes.error) {
+          setInterview(interviewRes);
         }
       } catch {
         setError("Error communicating with dossier server.");
@@ -103,8 +171,6 @@ export default function DossierPage() {
   };
 
   const handleShare = async () => {
-    // Wrap clipboard write in try/catch — clipboard API may be blocked
-    // on HTTP (non-HTTPS) contexts or by browser security settings.
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
@@ -120,7 +186,9 @@ export default function DossierPage() {
         <Loader2 className="w-8 h-8 text-brass animate-spin" />
         <div>
           <h3 className="font-display text-2xl text-parchment">Loading Career Dossier...</h3>
-          <p className="font-body text-xs text-warm-gray mt-1">Retrieving your full manuscript analysis</p>
+          <p className="font-body text-xs text-warm-gray mt-1">
+            Retrieving your full manuscript analysis
+          </p>
         </div>
       </div>
     );
@@ -151,10 +219,14 @@ export default function DossierPage() {
   const cvRewrite = session.cv_rewrite_data || {};
   const score = gap.overall_readiness_score || 0;
 
+  const profileSummary = profile.cv_summary_original || profile.summary || null;
+  const profileSkills = profile.current_skills || profile.skills || [];
+  const formattedEducation = formatEducationSafe(profile.education);
+
   return (
     <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full bg-ink relative">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <button
           onClick={() => router.push(`/dashboard/${sessionId}`)}
           className="flex items-center gap-2 font-body text-xs font-semibold text-warm-gray hover:text-brass transition-colors cursor-pointer"
@@ -162,7 +234,13 @@ export default function DossierPage() {
           <ArrowLeft size={14} /> Back to Dashboard
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => router.push(`/resume/${sessionId}`)}
+            className="px-4 py-2 rounded-sm bg-ink border border-teal/50 text-parchment hover:border-brass text-xs font-body flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <Printer size={13} className="text-brass" /> Printable ATS Resume
+          </button>
           <button
             onClick={handleShare}
             className="px-4 py-2 rounded-sm bg-ink border border-warm-gray/30 text-parchment hover:border-brass text-xs font-body flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -175,7 +253,7 @@ export default function DossierPage() {
             className="px-5 py-2 rounded-sm bg-brass text-ink font-body text-xs font-semibold flex items-center gap-1.5 hover:bg-brass/90 disabled:opacity-60 cursor-pointer shadow-md transition-colors"
           >
             {downloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            Download PDF
+            Download Dossier PDF
           </button>
         </div>
       </div>
@@ -220,43 +298,59 @@ export default function DossierPage() {
           <div className="shrink-0 flex items-baseline gap-1 bg-ink/5 p-4 rounded-sm border border-ink/10">
             <AnimatedCounter value={score} className="font-mono text-5xl font-bold text-brass" />
             <span className="font-mono text-lg text-ink/40">/100</span>
-            <span className="font-mono text-[10px] text-ink/60 uppercase block ml-2">Readiness</span>
+            <span className="font-mono text-[10px] text-ink/60 uppercase block ml-2">
+              Readiness
+            </span>
           </div>
         </header>
 
         {/* Section 1: Professional Profile */}
-        {(profile.summary || (profile.skills && profile.skills.length > 0)) && (
+        {(profileSummary || formattedEducation || profileSkills.length > 0) && (
           <AnimatedSection className="flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-ink/15 pb-2">
               <h2 className="font-display text-2xl text-ink flex items-center gap-2">
                 <User size={18} className="text-teal" /> 1. Professional Profile
               </h2>
             </div>
-            {profile.summary && (
-              <p className="font-body text-sm text-ink/80 leading-relaxed">
-                {profile.summary}
-              </p>
+            {profileSummary && (
+              <p className="font-body text-sm text-ink/80 leading-relaxed">{profileSummary}</p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
-              {profile.education && (
+              {formattedEducation && (
                 <div className="p-3 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-1">
                   <span className="text-[10px] text-ink/50 uppercase">Education</span>
-                  <span className="font-semibold text-ink">{profile.education}</span>
+                  <span className="font-semibold text-ink">{formattedEducation}</span>
                 </div>
               )}
               {profile.experience_years != null && (
                 <div className="p-3 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-1">
                   <span className="text-[10px] text-ink/50 uppercase">Experience</span>
-                  <span className="font-semibold text-ink">{profile.experience_years} years</span>
+                  <span className="font-semibold text-ink">
+                    {profile.experience_years} years
+                  </span>
                 </div>
               )}
               {market.market_demand_level && (
                 <div className="p-3 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-1">
                   <span className="text-[10px] text-ink/50 uppercase">Market Demand</span>
-                  <span className="font-semibold text-brass">{market.market_demand_level}</span>
+                  <span className="font-semibold text-brass">
+                    {market.market_demand_level}
+                  </span>
                 </div>
               )}
             </div>
+            {profileSkills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {profileSkills.map((sk, idx) => (
+                  <span
+                    key={`p-sk-${idx}`}
+                    className="font-mono text-[11px] bg-ink/5 border border-ink/15 text-ink px-2.5 py-0.5 rounded-sm"
+                  >
+                    {sk}
+                  </span>
+                ))}
+              </div>
+            )}
           </AnimatedSection>
         )}
 
@@ -270,14 +364,21 @@ export default function DossierPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs">
               <div className="p-3.5 rounded-sm bg-ink/5 border border-ink/10">
-                <span className="text-[10px] text-ink/50 uppercase block mb-1">Salary Range (PKR)</span>
+                <span className="text-[10px] text-ink/50 uppercase block mb-1">
+                  Salary Range (PKR)
+                </span>
                 <span className="font-bold text-base text-brass">
-                  PKR {market.salary_range_pkr?.min?.toLocaleString()} – {market.salary_range_pkr?.max?.toLocaleString()} /mo
+                  PKR {market.salary_range_pkr?.min?.toLocaleString() || "N/A"} –{" "}
+                  {market.salary_range_pkr?.max?.toLocaleString() || "N/A"} /mo
                 </span>
               </div>
               <div className="p-3.5 rounded-sm bg-ink/5 border border-ink/10">
-                <span className="text-[10px] text-ink/50 uppercase block mb-1">Remote Openings</span>
-                <span className="font-bold text-base text-teal">{market.remote_percentage || "N/A"}</span>
+                <span className="text-[10px] text-ink/50 uppercase block mb-1">
+                  Remote Openings
+                </span>
+                <span className="font-bold text-base text-teal">
+                  {market.remote_percentage || "N/A"}
+                </span>
               </div>
             </div>
             <p className="font-body text-xs text-ink/80 italic border-l-2 border-brass pl-4 py-1">
@@ -293,6 +394,11 @@ export default function DossierPage() {
               <h2 className="font-display text-2xl text-ink flex items-center gap-2">
                 <AlertCircle size={18} className="text-critical-red" /> 3. Skill Gap Analysis
               </h2>
+              {typeof gap.jd_match_score === "number" && (
+                <span className="font-mono text-xs font-bold text-teal">
+                  Target JD Match: {gap.jd_match_score}/100
+                </span>
+              )}
             </div>
             <p className="font-body text-xs text-ink/80 leading-relaxed">{gap.summary}</p>
             {gap.critical_gaps && gap.critical_gaps.length > 0 && (
@@ -301,7 +407,10 @@ export default function DossierPage() {
                   Critical Gaps:
                 </span>
                 {gap.critical_gaps.map((g, idx) => (
-                  <div key={idx} className="border-l-2 border-critical-red pl-4 py-1 font-body text-xs text-ink/80">
+                  <div
+                    key={idx}
+                    className="border-l-2 border-critical-red pl-4 py-1 font-body text-xs text-ink/80"
+                  >
                     <strong className="text-ink">{g.skill}</strong> — {g.reason}
                   </div>
                 ))}
@@ -327,17 +436,42 @@ export default function DossierPage() {
               <span className="font-mono text-[10px] text-brass uppercase font-semibold block mb-1">
                 Optimized Executive Summary
               </span>
-              <p className="font-body text-xs text-ink leading-relaxed">{cvRewrite.rewritten_summary}</p>
+              <p className="font-body text-xs text-ink leading-relaxed">
+                {cvRewrite.rewritten_summary}
+              </p>
             </div>
+
+            {cvRewrite.rewritten_experience_bullets &&
+              cvRewrite.rewritten_experience_bullets.length > 0 && (
+                <div className="flex flex-col gap-2 mt-1">
+                  <span className="font-mono text-xs font-semibold text-ink/60 uppercase tracking-wider">
+                    Quantified Experience Bullets
+                  </span>
+                  {cvRewrite.rewritten_experience_bullets.map((b, idx) => (
+                    <div
+                      key={`dos-exp-${idx}`}
+                      className="border-l-2 border-ink/25 pl-4 py-0.5 font-body text-xs text-ink/85"
+                    >
+                      • {b.rewritten}
+                    </div>
+                  ))}
+                </div>
+              )}
+
             {cvRewrite.rewritten_projects && cvRewrite.rewritten_projects.length > 0 && (
               <div className="flex flex-col gap-3 mt-2">
                 <span className="font-mono text-xs font-semibold text-ink/60 uppercase tracking-wider">
                   Enhanced Project Descriptions
                 </span>
                 {cvRewrite.rewritten_projects.map((proj, idx) => (
-                  <div key={idx} className="border-l-2 border-ink/20 pl-4 py-1 flex flex-col gap-1">
+                  <div
+                    key={idx}
+                    className="border-l-2 border-ink/20 pl-4 py-1 flex flex-col gap-1"
+                  >
                     <span className="font-display text-sm text-ink">{proj.name}</span>
-                    <p className="font-body text-xs text-ink/80 leading-relaxed">{proj.rewritten}</p>
+                    <p className="font-body text-xs text-ink/80 leading-relaxed">
+                      {proj.rewritten}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -355,21 +489,71 @@ export default function DossierPage() {
             </div>
             <div className="flex flex-col gap-4">
               {roadmap.thirty_day_plan.map((week, idx) => (
-                <div key={idx} className="border-l-2 border-teal pl-4 py-1 flex flex-col gap-2">
+                <div
+                  key={idx}
+                  className="border-l-2 border-teal pl-4 py-1 flex flex-col gap-2"
+                >
                   <span className="font-mono text-xs font-bold text-teal">
                     Week {week.week}: {week.focus}
                   </span>
                   <div className="space-y-1.5">
                     {week.tasks?.map((task, tidx) => (
-                      <p key={tidx} className="font-body text-xs text-ink/80 flex items-center gap-2">
+                      <p
+                        key={tidx}
+                        className="font-body text-xs text-ink/80 flex items-center gap-2"
+                      >
                         <span className="font-mono text-teal">→</span>
                         <span>{task.task}</span>
-                        <span className="font-mono text-[10px] text-ink/50">({task.resource})</span>
+                        <span className="font-mono text-[10px] text-ink/50">
+                          ({task.resource})
+                        </span>
                       </p>
                     ))}
                   </div>
                 </div>
               ))}
+            </div>
+          </AnimatedSection>
+        )}
+
+        {/* Section 6: Mock Interview Scorecard */}
+        {interview && interview.scores && interview.scores.length > 0 && (
+          <AnimatedSection className="flex flex-col gap-4 pt-2" delay={0.3}>
+            <div className="flex items-center justify-between border-b border-ink/15 pb-2">
+              <h2 className="font-display text-2xl text-ink flex items-center gap-2">
+                <MessageSquare size={18} className="text-brass" /> 6. Mock Interview Scorecard
+              </h2>
+              {interview.final_score != null && (
+                <span className="font-mono text-xs font-bold text-teal bg-teal/15 border border-teal/40 px-2.5 py-0.5 rounded-sm">
+                  Overall Score: {interview.final_score}%
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {interview.scores.map((sc, idx) => {
+                const ans = interview.answers?.[idx];
+                return (
+                  <div
+                    key={`int-sc-${idx}`}
+                    className="p-3.5 rounded-sm bg-ink/[0.03] border border-ink/15 flex flex-col gap-1.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-body text-xs font-semibold text-ink">
+                        Q{idx + 1}: {ans?.question || `Question ${idx + 1}`}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-brass shrink-0">
+                        {sc.score}/10
+                      </span>
+                    </div>
+                    {sc.feedback_summary && (
+                      <p className="font-body text-xs text-ink/75 italic">
+                        {sc.feedback_summary}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </AnimatedSection>
         )}

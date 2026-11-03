@@ -121,36 +121,36 @@ const CONCEPTS = [
     icon: Layers,
     title: "Multi-Agent Collaboration",
     tag: "Core Architecture",
-    desc: "7 specialized agents in a sequential + parallel dependency graph. Agents A4 and A5 run concurrently via asyncio.gather(), cutting pipeline execution time by ~40%.",
-    code: "asyncio.gather(run_roadmap_agent(), run_cv_rewrite_agent())",
+    desc: "7 specialized agents in a parallel + sequential DAG. Agents (A1 || A2) and (A4 || A5) execute concurrently via asyncio.gather(), cutting end-to-end latency in half.",
+    code: "asyncio.gather(run_profile_agent(), run_market_agent())",
   },
   {
     icon: Search,
-    title: "Tool Use & Real-Time Grounding",
+    title: "Tool Use & 48h Market Caching",
     tag: "Market Integration",
-    desc: "The Market Agent uses Serper.dev to run 4 live Google Search queries per session against Pakistani job boards — grounding the pipeline in current market reality.",
+    desc: "The Market Agent runs 4 concurrent Serper.dev Google Search queries against Pakistani job boards, backed by a 48-hour role+city cache to conserve free search quotas.",
     code: `"Python Developer jobs Karachi site:rozee.pk"`,
   },
   {
     icon: Shield,
-    title: "Structured Outputs & Schema Hardening",
+    title: "Structured Outputs & Self-Repair",
     tag: "Resilience Layer",
-    desc: "Every agent enforces strict JSON output via Gemini's response_mime_type API. A 4-layer fallback parser (json → fence strip → regex → ast.literal_eval) prevents crashes.",
+    desc: "Every agent enforces strict JSON schemas across providers with a 4-layer fallback parser, reasoning <think> block stripping, and 1-shot automatic JSON self-repair.",
     code: `response_mime_type="application/json"`,
   },
   {
     icon: RefreshCcw,
     title: "Production-Grade Async Pipeline",
     tag: "System Reliability",
-    desc: "Live SSE streaming via asyncio.Queue. Exponential backoff with 8 retries. Automatic failover to a secondary model if primary API limits are exceeded.",
-    code: "wait = min(2 ** attempt, 15)  # backoff",
+    desc: "Live SSE streaming via asyncio.Queue with polling recovery on page refresh, smart retry backoff, and automatic failover when default free limits run tight.",
+    code: "wait = min(2 ** attempt, 12)  # smart backoff",
   },
   {
     icon: Key,
-    title: "Privacy-First BYOK Architecture",
-    tag: "Security & Freedom",
-    desc: "Bring Your Own Gemini Key (BYOK) support with zero-quota key validation via /api/keys/validate. Keys are saved strictly in browser localStorage, masked in the UI, and transmitted via encrypted HTTPS headers without server persistence.",
-    code: `headers: { 'X-Gemini-API-Key': userKey }`,
+    title: "Multi-Provider BYOK Studio",
+    tag: "8 Providers + Custom Models",
+    desc: "Runs free on Gemini 3.1 Flash Lite by default, while BYOK lets you connect Gemini, OpenAI, Claude, DeepSeek, Qwen, GLM, Groq, or OpenRouter with custom model IDs — stored strictly in browser localStorage.",
+    code: `headers: { 'X-LLM-Provider': provider, 'X-LLM-Model': model }`,
   },
 ];
 
@@ -422,22 +422,31 @@ export default function AboutPage() {
         <div className="space-y-6">
           <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
             <h3 className="font-display text-xl text-brass">
-              Why does Ustaad ask for an API key?
+              How does Multi-Provider Bring Your Own Key (BYOK) work?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Ustaad runs on Google&apos;s free-tier Gemini API by default. This free tier is shared across everyone using the platform and has a limited number of requests per day — during busy peak periods, it may run low temporarily.
+              Out of the box, Ustaad runs completely free on Google&apos;s shared Gemini 3.1 Flash Lite tier. During peak student traffic, shared daily requests can run tight — or you may want to test frontier reasoning models on your CV.
             </p>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Adding your own free Gemini API key takes about 30 seconds (no credit card required) at{" "}
+              With BYOK mode, you can connect a free key from{" "}
               <a
                 href="https://aistudio.google.com/apikey"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brass underline hover:text-brass/80 font-medium"
               >
-                aistudio.google.com/apikey
+                Google AI Studio
+              </a>{" "}
+              or{" "}
+              <a
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brass underline hover:text-brass/80 font-medium"
+              >
+                Groq
               </a>
-              . Your key is stored solely in your local browser storage and transmitted via encrypted HTTPS headers — Ustaad never saves it to any database.
+              , or bring keys from OpenAI (ChatGPT), Anthropic (Claude), DeepSeek, Alibaba Qwen, Zhipu GLM, or OpenRouter — including custom model IDs. Keys live strictly in your browser&apos;s localStorage and are never stored in any database.
             </p>
           </div>
 
@@ -446,7 +455,7 @@ export default function AboutPage() {
               Is my CV or data stored anywhere?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Your CV text and analysis results are stored in Supabase, tied to your unique session link. Anyone with that exact link can view your dashboard, interview, and dossier... treat it like a private link and don't share it publicly. There's no account or sign-in; the link itself is your access. This data is never used to train any AI model or shared with third parties.
+              Your CV text and analysis results are stored in Supabase, tied to your unique session link. Anyone with that exact link can view your dashboard, interview, and dossier — treat it like a private link and don&apos;t share it publicly. There&apos;s no account or sign-in; the link itself is your access. This data is never used to train any AI model or shared with third parties.
             </p>
           </div>
 

@@ -170,3 +170,29 @@
   -webkit-text-fill-color: transparent;
   animation: shimmerText 3s ease-in-out 0.5s 1 forwards;
 }
+
+/* Crisp A4 ATS Resume Print Overrides (Zero Server CPU PDF Export) */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm;
+  }
+
+  html,
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    min-height: auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .ats-print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}

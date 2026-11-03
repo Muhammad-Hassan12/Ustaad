@@ -6,27 +6,56 @@ import { AlertCircle } from "lucide-react";
 interface PipelineProgressProps {
   completedAgents: string[];
   currentAgent: string | null;
+  activeAgents?: string[];
   status: "pending" | "running" | "complete" | "error";
   errorMessage: string | null;
 }
 
 const AGENTS = [
   { key: "profile", label: "Profile" },
-  { key: "market", label: "Market Intelligence" },
+  { key: "market", label: "Market" },
   { key: "gap", label: "Gap Analysis" },
   { key: "roadmap", label: "Roadmap" },
   { key: "cv_rewrite", label: "CV Rewrite" },
 ];
 
+function isAgentCurrentlyRunning(
+  agentKey: string,
+  currentAgent: string | null,
+  activeAgents: string[] | undefined,
+  completedAgents: string[]
+): boolean {
+  if (completedAgents.includes(agentKey)) return false;
+  if (activeAgents && activeAgents.includes(agentKey)) return true;
+  if (!currentAgent) return false;
+  if (currentAgent === agentKey) return true;
+  if (
+    currentAgent === "profile_and_market" &&
+    (agentKey === "profile" || agentKey === "market")
+  ) {
+    return true;
+  }
+  if (
+    currentAgent === "roadmap_and_cv" &&
+    (agentKey === "roadmap" || agentKey === "cv_rewrite")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export default function PipelineProgress({
   completedAgents,
   currentAgent,
+  activeAgents,
   status,
   errorMessage,
 }: PipelineProgressProps) {
   const checkpoints: LedgerCheckpoint[] = AGENTS.map((agent) => {
     const isCompleted = completedAgents.includes(agent.key);
-    const isActive = currentAgent === agent.key && status === "running";
+    const isActive =
+      status === "running" &&
+      isAgentCurrentlyRunning(agent.key, currentAgent, activeAgents, completedAgents);
     return {
       label: agent.label,
       status: isCompleted ? "complete" : isActive ? "active" : "pending",
@@ -45,7 +74,7 @@ export default function PipelineProgress({
         <div>
           <h3 className="font-display text-xl text-parchment">Pipeline Orchestration</h3>
           <p className="font-body text-xs text-warm-gray mt-0.5">
-            Real-time agentic execution ledger
+            Parallel + sequential execution ledger
           </p>
         </div>
         {status === "complete" && (

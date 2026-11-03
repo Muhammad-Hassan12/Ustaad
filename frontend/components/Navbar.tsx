@@ -5,24 +5,34 @@ import Link from "next/link";
 import Image from "next/image";
 import ApiKeyModal from "@/components/ApiKeyModal";
 import ResumeSessionModal from "@/components/ResumeSessionModal";
+import {
+  ActiveBYOKConfig,
+  BYOK_UPDATED_EVENT,
+  getActiveBYOKConfig,
+} from "@/lib/llmConfig";
 import { Key, History, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
-  const [hasCustomKey, setHasCustomKey] = useState(false);
+  const [activeByok, setActiveByok] = useState<ActiveBYOKConfig | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const checkKeyStatus = () => {
     if (typeof window !== "undefined") {
-      const key = localStorage.getItem("gemini_api_key");
-      setHasCustomKey(!!(key && key.trim()));
+      setActiveByok(getActiveBYOKConfig());
     }
   };
 
   useEffect(() => {
     checkKeyStatus();
+    window.addEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
+    window.addEventListener("storage", checkKeyStatus);
+    return () => {
+      window.removeEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
+      window.removeEventListener("storage", checkKeyStatus);
+    };
   }, []);
 
   // Close mobile menu when clicking outside
@@ -40,9 +50,13 @@ export default function Navbar() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
+  const shortModel = activeByok
+    ? activeByok.model.split("/").pop()?.slice(0, 18) || activeByok.model
+    : null;
+
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-ink border-b border-warm-gray/15 px-4 sm:px-8 md:px-12 py-3.5 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 w-full bg-ink border-b border-warm-gray/15 px-4 sm:px-8 md:px-12 py-3.5 flex items-center justify-between print:hidden">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0 group whitespace-nowrap">
           <div className="w-8 h-8 rounded-sm overflow-hidden border border-brass/30 shrink-0">
@@ -83,14 +97,19 @@ export default function Navbar() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-sm border font-mono text-[11px] sm:text-xs transition-colors cursor-pointer whitespace-nowrap ${hasCustomKey
-              ? "border-teal/50 text-teal bg-teal/10 hover:bg-teal/20"
-              : "border-warm-gray/30 text-warm-gray hover:text-parchment hover:border-brass/40"
-              }`}
-            title="Configure Gemini API Key (BYOK)"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-sm border font-mono text-[11px] sm:text-xs transition-colors cursor-pointer whitespace-nowrap ${
+              activeByok
+                ? "border-teal/50 text-teal bg-teal/10 hover:bg-teal/20"
+                : "border-warm-gray/30 text-warm-gray hover:text-parchment hover:border-brass/40"
+            }`}
+            title="Configure AI Provider & BYOK Model"
           >
-            <Key size={13} className={hasCustomKey ? "text-teal" : "text-brass"} />
-            <span>{hasCustomKey ? "API Key: Custom" : "API Key"}</span>
+            <Key size={13} className={activeByok ? "text-teal" : "text-brass"} />
+            <span>
+              {activeByok
+                ? `${activeByok.providerShortName} · ${shortModel}`
+                : "AI Model / Key"}
+            </span>
           </button>
 
           <a
@@ -117,7 +136,7 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="md:hidden sticky top-[57px] z-40 w-full bg-ink border-b border-warm-gray/15 px-5 py-4 flex flex-col gap-1 animate-fadeInUp shadow-lg"
+          className="md:hidden sticky top-[57px] z-40 w-full bg-ink border-b border-warm-gray/15 px-5 py-4 flex flex-col gap-1 animate-fadeInUp shadow-lg print:hidden"
         >
           <Link
             href="/"
@@ -136,7 +155,10 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={() => { closeMobileMenu(); setIsResumeModalOpen(true); }}
+            onClick={() => {
+              closeMobileMenu();
+              setIsResumeModalOpen(true);
+            }}
             className="flex items-center gap-2 text-left font-mono text-xs text-brass hover:text-brass/80 py-2.5 border-b border-warm-gray/10 transition-colors cursor-pointer"
           >
             <History size={14} />
@@ -145,12 +167,18 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={() => { closeMobileMenu(); setIsModalOpen(true); }}
-            className={`flex items-center gap-2 text-left font-mono text-xs py-2.5 border-b border-warm-gray/10 transition-colors cursor-pointer ${hasCustomKey ? "text-teal" : "text-warm-gray hover:text-parchment"
-              }`}
+            onClick={() => {
+              closeMobileMenu();
+              setIsModalOpen(true);
+            }}
+            className={`flex items-center gap-2 text-left font-mono text-xs py-2.5 border-b border-warm-gray/10 transition-colors cursor-pointer ${
+              activeByok ? "text-teal" : "text-warm-gray hover:text-parchment"
+            }`}
           >
-            <Key size={14} className={hasCustomKey ? "text-teal" : "text-brass"} />
-            {hasCustomKey ? "API Key: Custom ✓" : "Configure API Key"}
+            <Key size={14} className={activeByok ? "text-teal" : "text-brass"} />
+            {activeByok
+              ? `BYOK: ${activeByok.providerShortName} (${shortModel}) ✓`
+              : "Configure AI Provider / BYOK"}
           </button>
 
           <a

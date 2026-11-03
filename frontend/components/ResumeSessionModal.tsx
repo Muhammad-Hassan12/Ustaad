@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, History, ArrowRight, Clock, Trash2, Search, CheckCircle2 } from "lucide-react";
+import { X, History, ArrowRight, Clock, Trash2 } from "lucide-react";
 
 interface RecentSession {
   id: string;

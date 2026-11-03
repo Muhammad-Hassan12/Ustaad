@@ -10,9 +10,29 @@ import { startPipeline } from "@/lib/api";
 import ApiKeyModal from "@/components/ApiKeyModal";
 import ResumeSessionModal from "@/components/ResumeSessionModal";
 import {
-  ArrowRight, Loader2, Sparkles, ChevronDown, AlertCircle,
-  UserSearch, TrendingUp, GitCompare, Map, FileSignature, Mic, Download,
-  ShieldCheck, Zap, Globe, Key
+  ActiveBYOKConfig,
+  BYOK_UPDATED_EVENT,
+  getActiveBYOKConfig,
+  SERVER_DEFAULT_MODEL,
+} from "@/lib/llmConfig";
+import {
+  ArrowRight,
+  Loader2,
+  Sparkles,
+  ChevronDown,
+  AlertCircle,
+  UserSearch,
+  TrendingUp,
+  GitCompare,
+  Map,
+  FileSignature,
+  Mic,
+  Download,
+  ShieldCheck,
+  Zap,
+  Globe,
+  FileText,
+  Cpu,
 } from "lucide-react";
 
 const DEFAULT_CITIES = [
@@ -32,12 +52,12 @@ const DEFAULT_CITIES = [
 
 const AGENT_PREVIEWS = [
   { icon: UserSearch, name: "Profile Agent", tag: "A1", desc: "Parses CV into structured JSON" },
-  { icon: TrendingUp, name: "Market Agent", tag: "A2", desc: "Runs 4 live Serper.dev job queries" },
-  { icon: GitCompare, name: "Gap Agent", tag: "A3", desc: "Computes 0–100 Readiness Score" },
-  { icon: Map, name: "Roadmap Agent", tag: "A4", desc: "30/60/90-day learning path" },
-  { icon: FileSignature, name: "CV Rewrite Agent", tag: "A5", desc: "ATS bullet point optimization" },
-  { icon: Mic, name: "Interview Agent", tag: "A6", desc: "15-question AI mock interview" },
-  { icon: Download, name: "Export Agent", tag: "A7", desc: "ReportLab PDF Career Dossier" },
+  { icon: TrendingUp, name: "Market Agent", tag: "A2", desc: "Live Pakistani job grounding + cache" },
+  { icon: GitCompare, name: "Gap Agent", tag: "A3", desc: "0–100 Readiness + JD Match Score" },
+  { icon: Map, name: "Roadmap Agent", tag: "A4", desc: "Interactive 30/60/90-day plan" },
+  { icon: FileSignature, name: "CV Rewrite Agent", tag: "A5", desc: "ATS bullets + referral outreach" },
+  { icon: Mic, name: "Interview Agent", tag: "A6", desc: "Custom sprint & full mock loops" },
+  { icon: Download, name: "Export Studio", tag: "A7", desc: "PDF Dossier + Printable ATS CV" },
 ];
 
 export default function Home() {
@@ -50,21 +70,24 @@ export default function Home() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [experience, setExperience] = useState(1);
   const [educationLevel, setEducationLevel] = useState("Bachelor's");
+  const [showJdInput, setShowJdInput] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
-  const [hasCustomKey, setHasCustomKey] = useState(false);
+  const [activeByok, setActiveByok] = useState<ActiveBYOKConfig | null>(null);
 
   const checkKeyStatus = () => {
     if (typeof window !== "undefined") {
-      const key = localStorage.getItem("gemini_api_key");
-      setHasCustomKey(!!(key && key.trim()));
+      setActiveByok(getActiveBYOKConfig());
     }
   };
 
   useEffect(() => {
     checkKeyStatus();
+    window.addEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
+    window.addEventListener("storage", checkKeyStatus);
 
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -73,6 +96,8 @@ export default function Home() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
+      window.removeEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
+      window.removeEventListener("storage", checkKeyStatus);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
@@ -108,6 +133,9 @@ export default function Home() {
       formData.append("target_city", targetCity);
       formData.append("experience_years", experience.toString());
       formData.append("education_level", educationLevel);
+      if (jobDescription.trim()) {
+        formData.append("job_description", jobDescription.trim());
+      }
 
       const res = await startPipeline(formData);
       if (res && res.session_id) {
@@ -125,17 +153,20 @@ export default function Home() {
   return (
     <main className="flex-1 flex flex-col gap-20 bg-ink text-parchment py-10 px-6 md:px-12 lg:px-16 max-w-7xl mx-auto w-full">
       {/* 1. Hero 2-Column Grid Layout */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-4">
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start pt-4">
         {/* Left Column: Hero Copy & Ledger Line */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        <div className="lg:col-span-7 flex flex-col gap-6 lg:pt-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-parchment/5 text-brass border border-brass/30 text-xs font-mono tracking-wider uppercase self-start">
             <Sparkles size={13} />
-            Kaggle Capstone · 5-Day AI Agents Submission
+            AI Career OS · Built for Pakistani Tech Talent
           </div>
 
           <h1 className="font-display text-6xl md:text-8xl leading-none tracking-tight text-shimmer">
             Meet Ustaad
-            <span className="block text-3xl md:text-4xl text-warm-gray font-normal mt-2 font-display" style={{ WebkitTextFillColor: 'unset', backgroundImage: 'none' }}>
+            <span
+              className="block text-3xl md:text-4xl text-warm-gray font-normal mt-2 font-display"
+              style={{ WebkitTextFillColor: "unset", backgroundImage: "none" }}
+            >
               اُستاد
             </span>
           </h1>
@@ -146,20 +177,23 @@ export default function Home() {
               The career coach Pakistan never had.
             </p>
             <p className="font-body text-sm text-warm-gray mt-3 leading-relaxed">
-              Upload your CV, select your target role, and Ustaad&apos;s 7-agent AI pipeline gives you a real-time market snapshot, honest skill gap analysis, personalized learning roadmap, ATS-optimized CV rewrite, and an AI mock interview — all in under 5 minutes.
+              Upload your CV, pick your target role, and Ustaad&apos;s parallel 7-agent pipeline delivers live Pakistani market salaries, an honest skill-gap &amp; JD match score, an interactive 30/60/90-day roadmap, a ready-to-export ATS CV rewrite, and custom AI mock interviews.
             </p>
           </div>
 
           {/* Feature Badges */}
           <div className="flex flex-wrap items-center gap-3 my-1">
             <span className="font-mono text-xs text-brass bg-brass/10 border border-brass/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <Zap size={13} className="shrink-0" /> 7 Autonomous AI Agents
+              <Zap size={13} className="shrink-0" /> 7 Parallel AI Agents
             </span>
             <span className="font-mono text-xs text-teal bg-teal/10 border border-teal/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <Globe size={13} className="shrink-0" /> Live Pakistani Job Grounding
+              <Globe size={13} className="shrink-0" /> Live Pakistani Market Grounding
             </span>
             <span className="font-mono text-xs text-parchment bg-parchment/10 border border-warm-gray/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <ShieldCheck size={13} className="shrink-0" /> 100% Free & Open
+              <Cpu size={13} className="shrink-0 text-brass" /> Multi-Model BYOK Ready
+            </span>
+            <span className="font-mono text-xs text-parchment bg-parchment/10 border border-warm-gray/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
+              <ShieldCheck size={13} className="shrink-0 text-teal" /> 100% Free &amp; Open Source
             </span>
           </div>
 
@@ -173,8 +207,8 @@ export default function Home() {
               variant="on-ink"
               checkpoints={[
                 { label: "1. Upload CV", status: file ? "complete" : "active" },
-                { label: "2. Get Analysis", status: "pending" },
-                { label: "3. Land the Role", status: "pending" },
+                { label: "2. Live Analysis", status: "pending" },
+                { label: "3. Export & Interview", status: "pending" },
               ]}
             />
           </div>
@@ -184,7 +218,7 @@ export default function Home() {
         <div className="lg:col-span-5 w-full">
           <form
             onSubmit={handleSubmit}
-            className="bg-parchment text-ink rounded-sm border border-brass/40 p-7 md:p-9 shadow-2xl relative flex flex-col gap-6"
+            className="bg-parchment text-ink rounded-sm border border-brass/40 p-7 md:p-8 shadow-2xl relative flex flex-col gap-5 paper-grain"
           >
             {/* Decorative brass corner ticks */}
             <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
@@ -193,12 +227,12 @@ export default function Home() {
             <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
 
             {/* Header */}
-            <div className="border-b border-ink/15 pb-4">
+            <div className="border-b border-ink/15 pb-3.5">
               <h2 className="font-display text-2xl md:text-3xl text-ink">
                 Start Your Career Analysis
               </h2>
               <p className="font-body text-xs text-ink/70 mt-1">
-                Upload your CV and specify your target role to launch Ustaad&apos;s 7-agent pipeline.
+                Upload your PDF resume and target role to launch Ustaad&apos;s multi-agent pipeline.
               </p>
             </div>
 
@@ -219,7 +253,7 @@ export default function Home() {
 
             <div className="border-t border-ink/10 pt-4 flex flex-col gap-4">
               <label className="font-mono text-xs font-semibold text-ink/80 uppercase tracking-wider">
-                2. Job & Experience Details
+                2. Job &amp; Experience Details
               </label>
 
               <div className="flex flex-col gap-4">
@@ -259,7 +293,10 @@ export default function Home() {
                         onClick={() => setIsOpen(!isOpen)}
                         className="absolute right-0 top-1/2 -translate-y-1/2 text-ink/60 cursor-pointer p-1"
                       >
-                        <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                        />
                       </div>
                     </div>
 
@@ -300,7 +337,9 @@ export default function Home() {
 
                   {/* Experience Years */}
                   <div className="flex flex-col gap-1.5">
-                    <span className="font-body text-xs text-ink/70 font-medium">Experience (Years)</span>
+                    <span className="font-body text-xs text-ink/70 font-medium">
+                      Experience (Years)
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -331,11 +370,47 @@ export default function Home() {
                     <option value="Self-taught">Self-taught / Other</option>
                   </select>
                 </div>
+
+                {/* Optional Specific Job Description Drawer */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowJdInput(!showJdInput)}
+                    className="w-full flex items-center justify-between text-left px-3 py-2 rounded-sm border border-ink/15 bg-ink/[0.03] hover:border-brass/50 transition-colors cursor-pointer"
+                  >
+                    <span className="font-mono text-[11px] font-semibold text-ink/80 flex items-center gap-1.5">
+                      <FileText size={13} className="text-teal" />
+                      {jobDescription.trim()
+                        ? "Target Job Description Added ✓"
+                        : "Tailor to a Specific Job Posting (Optional)"}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-ink/60 transition-transform ${showJdInput ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showJdInput && (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <textarea
+                        rows={4}
+                        placeholder="Paste a specific job description from LinkedIn, Rozee.pk, or a company career page to unlock a JD Match Score, missing JD keywords, and a tailored LinkedIn referral note..."
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        maxLength={8000}
+                        className="w-full p-3 rounded-sm bg-transparent border border-ink/25 focus:border-brass focus:outline-none font-body text-xs text-ink leading-relaxed placeholder:text-ink/40 resize-y"
+                      />
+                      <span className="font-mono text-[10px] text-ink/50 text-right">
+                        {jobDescription.length}/8000 chars · Zero extra API calls
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Submit Button */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={loading}
@@ -353,19 +428,33 @@ export default function Home() {
                   </>
                 )}
               </button>
-              <p className="text-center font-mono text-[11px] text-ink/60 mt-3">
-                Analysis takes 2–4 min · Powered by Gemini 3.1 Flash Lite
+
+              <p className="text-center font-mono text-[11px] text-ink/65 mt-3">
+                {activeByok ? (
+                  <>
+                    BYOK Active · Powered by{" "}
+                    <strong className="text-teal">
+                      {activeByok.providerShortName} ({activeByok.model})
+                    </strong>
+                  </>
+                ) : (
+                  <>Fast Parallel Pipeline · Default: {SERVER_DEFAULT_MODEL}</>
+                )}
               </p>
-              <p className="text-center font-body text-xs text-ink/60 mt-1">
-                {hasCustomKey ? "Using custom Gemini API key — " : "Using shared quota — "}
+
+              <p className="text-center font-body text-xs text-ink/65 mt-1">
+                {activeByok ? "Want to switch AI provider or model? " : "Using free shared server key — "}
                 <button
                   type="button"
                   onClick={() => setIsKeyModalOpen(true)}
                   className="text-brass underline hover:text-brass/80 cursor-pointer font-medium"
                 >
-                  {hasCustomKey ? "manage your key →" : "add your own key for guaranteed speed →"}
+                  {activeByok
+                    ? "configure BYOK settings →"
+                    : "bring your own key (Claude, GPT, DeepSeek, Qwen, GLM, Groq) →"}
                 </button>
               </p>
+
               <p className="text-center font-body text-[11px] text-ink/50 mt-3 border-t border-ink/10 pt-3">
                 Have a previous Session ID?{" "}
                 <button
@@ -391,16 +480,14 @@ export default function Home() {
             7 Autonomous AI Agents Working For You
           </h2>
           <p className="font-body text-xs text-warm-gray max-w-2xl leading-relaxed">
-            From parsing your CV to running real-time Pakistani market queries and scoring mock interviews — each specialized agent handles one core piece of your career intelligence.
+            From parallel CV &amp; market intelligence parsing to ATS resume generation and custom mock interviews — each specialized agent handles one critical pillar of your career strategy.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           {AGENT_PREVIEWS.map((agent, idx) => (
             <StaggerChild key={idx} index={idx}>
-              <div
-                className="bg-parchment text-ink rounded-sm border border-brass/30 p-4 flex flex-col gap-2 relative shadow-md hover:border-brass transition-colors card-hover paper-grain h-full"
-              >
+              <div className="bg-parchment text-ink rounded-sm border border-brass/30 p-4 flex flex-col gap-2 relative shadow-md hover:border-brass transition-colors card-hover paper-grain h-full">
                 <div className="flex justify-between items-center">
                   <span className="font-mono text-[10px] font-bold text-brass bg-brass/10 border border-brass/30 px-2 py-0.5 rounded-sm">
                     {agent.tag}
@@ -426,14 +513,14 @@ export default function Home() {
               Complete Career Intelligence
             </span>
             <h2 className="font-display text-3xl md:text-4xl text-ink">
-              What You Get in Under 5 Minutes
+              What You Get in Minutes
             </h2>
           </div>
           <Link
             href="/about"
             className="font-body text-xs font-semibold text-teal hover:text-brass flex items-center gap-1 transition-colors"
           >
-            Learn more about the technology →
+            Learn more about the architecture →
           </Link>
         </div>
 
@@ -442,41 +529,41 @@ export default function Home() {
             <span className="font-mono text-xs font-bold text-brass">01 / MARKET SNAPSHOT</span>
             <h3 className="font-display text-xl text-ink">Real-Time Demand</h3>
             <p className="font-body text-xs text-ink/75 leading-relaxed">
-              4 live queries on Rozee, Mustakbil & LinkedIn for local salary ranges (PKR) and top hiring tech companies.
+              Live Pakistani tech job queries for local PKR salary ranges, remote ratios, and top hiring software houses.
             </p>
           </div>
 
           <div className="p-5 rounded-sm border border-ink/15 bg-ink/[0.03] flex flex-col gap-2">
-            <span className="font-mono text-xs font-bold text-teal">02 / SKILL GAP REPORT</span>
-            <h3 className="font-display text-xl text-ink">0–100 Readiness Score</h3>
+            <span className="font-mono text-xs font-bold text-teal">02 / GAP &amp; JD SCORE</span>
+            <h3 className="font-display text-xl text-ink">0–100 Readiness</h3>
             <p className="font-body text-xs text-ink/75 leading-relaxed">
-              Quantified breakdown comparing your current skills against live employer requirements.
+              Honest gap breakdown against live market demands plus exact Job Description match scoring.
             </p>
           </div>
 
           <div className="p-5 rounded-sm border border-ink/15 bg-ink/[0.03] flex flex-col gap-2">
-            <span className="font-mono text-xs font-bold text-brass">03 / ATS REWRITE & ROADMAP</span>
-            <h3 className="font-display text-xl text-ink">30-Day Growth Plan</h3>
+            <span className="font-mono text-xs font-bold text-brass">03 / ATS CV &amp; ROADMAP</span>
+            <h3 className="font-display text-xl text-ink">Printable ATS CV</h3>
             <p className="font-body text-xs text-ink/75 leading-relaxed">
-              Milestone-driven learning path with free resources, plus ATS-optimized CV bullet rewrites.
+              Checkable 30/60/90-day free learning roadmap plus a clean single-column ATS resume ready to export as PDF.
             </p>
           </div>
 
           <div className="p-5 rounded-sm border border-ink/15 bg-ink/[0.03] flex flex-col gap-2">
-            <span className="font-mono text-xs font-bold text-teal">04 / AI MOCK INTERVIEW</span>
-            <h3 className="font-display text-xl text-ink">15 Scored Q&As</h3>
+            <span className="font-mono text-xs font-bold text-teal">04 / MOCK INTERVIEW 2.0</span>
+            <h3 className="font-display text-xl text-ink">Custom Interview Loops</h3>
             <p className="font-body text-xs text-ink/75 leading-relaxed">
-              Multi-turn technical, behavioral & HR interview session with instant scored feedback rubrics.
+              Choose a 5-question rapid sprint, technical deep-dive, STAR behavioral prep, or full 15-question loop.
             </p>
           </div>
         </div>
       </AnimatedSection>
 
-      {/* 4. Kaggle Capstone Banner */}
+      {/* 4. Bottom Recognition Banner */}
       <AnimatedSection className="border-t border-warm-gray/20 pt-8 pb-12 flex flex-col sm:flex-row justify-between items-center text-xs font-mono text-warm-gray gap-4">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-brass animate-ping" />
-          <span>Submitted to Kaggle × Google 5-Day AI Agents Capstone 2026</span>
+          <span>Originally built for Kaggle × Google AI Agents Capstone · Open Source Career OS</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/about" className="hover:text-brass transition-colors">

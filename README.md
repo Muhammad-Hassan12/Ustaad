@@ -66,14 +66,15 @@ Every year, **tens of thousands of CS and IT graduates** enter Pakistan's techno
 
 ---
 
-## 🔑 BYOK — Bring Your Own Gemini Key
+## 🔑 Multi-Provider BYOK — Bring Your Own Key + Custom Models
 
-Ustaad includes full support for **Bring Your Own Gemini Key (BYOK)**:
+Ustaad 2.0 pairs a **locked zero-friction free default** with a **Multi-Provider BYOK Studio**:
 
-- **Privacy & Security First**: User keys are stored **strictly in local browser storage (`localStorage`)** and masked (`type="password"`) in the UI. Keys are **never** stored in the database, logged to any file, or echoed back in responses.
-- **Zero Quota Validation**: The frontend validates user keys via `GET /api/keys/validate` (which checks model availability without consuming generation quota) before launching pipeline tasks.
-- **Header Transmission**: When a key is active, requests include the `X-Gemini-API-Key` header over encrypted HTTPS.
-- **Seamless Fallback**: If no user key is provided, Ustaad transparently falls back to the server's default Gemini key, ensuring zero friction for first-time visitors.
+- **Free Server Default (Untouched)**: When no user key is supplied, Ustaad runs strictly on `Google Gemini` (`gemini-3.1-flash-lite`) via the server's shared tier with automatic `KAGGLE_LLM_URL` failover.
+- **8 Supported BYOK Providers + Custom Model IDs**: Users who supply their own key can choose from **Google Gemini**, **OpenAI (ChatGPT)**, **Anthropic (Claude)**, **DeepSeek**, **Alibaba Qwen** (`intl` & `cn`), **Zhipu GLM** (`cn` & `intl`), **Groq**, and **OpenRouter** — selecting curated presets or typing any custom model ID.
+- **Privacy & Security First**: User keys are stored **strictly in local browser storage (`localStorage`)**, masked in the UI, validated against an SSRF-safe provider allowlist, and scrubbed by `redact_secrets()` before any error string leaves the backend.
+- **Smart Validation**: `GET/POST /api/keys/validate` verifies provider credentials and custom model accessibility before launching pipeline or interview tasks.
+- **Header Transmission**: BYOK requests transmit `X-LLM-Provider`, `X-LLM-Model`, `X-LLM-API-Key` (and optional `X-LLM-Region`, plus backward-compatible `X-Gemini-API-Key`) over HTTPS.
 
 ## 🏆 Competition Track
 
@@ -504,30 +505,34 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## 📡 API Reference
 
-> 🔑 **BYOK Header Note**: Attach `X-Gemini-API-Key: <your_key>` header on `/api/keys/validate`, `/api/pipeline/start`, `/api/interview/start`, and `/api/interview/answer` endpoints to use a user-supplied key. If omitted, the server default key is used.
+> 🔑 **BYOK Header Note**: Attach `X-LLM-Provider`, `X-LLM-Model`, and `X-LLM-API-Key` (or legacy `X-Gemini-API-Key`) headers on `/api/keys/validate`, `/api/pipeline/start`, `/api/interview/start/{session_id}`, and `/api/interview/answer` to run with your own provider and model. When no `X-LLM-API-Key` is provided, Ustaad strictly locks execution to the free server default (`gemini` / `gemini-3.1-flash-lite`).
 
 ### Key & Validation Endpoints
 
 | Method | Endpoint | Description | Header (Optional) |
 |---|---|---|---|
 | `GET` | `/health` | Backend health check | None |
-| `GET` | `/api/keys/validate` | Validate Gemini API key status without using quota | `X-Gemini-API-Key` |
+| `GET` | `/api/keys/providers` | Catalog of supported BYOK providers, regions, and preset models | None |
+| `GET` / `POST` | `/api/keys/validate` | Validate BYOK provider key & model (or server default status) | `X-LLM-*` / `X-Gemini-API-Key` |
 
 ### Pipeline Endpoints
 
 | Method | Endpoint | Description | Header (Optional) |
 |---|---|---|---|
-| `POST` | `/api/pipeline/start` | Upload CV (multipart form) + start pipeline. Returns `{ session_id }` | `X-Gemini-API-Key` |
-| `GET` | `/api/pipeline/status/{session_id}` | SSE stream of real-time pipeline events (`agent_start`, `agent_complete`, `pipeline_complete`, `error`) | None |
+| `POST` | `/api/pipeline/start` | Upload CV (multipart form + optional `job_description`) + start parallel DAG pipeline. Returns `{ session_id }` | `X-LLM-*` |
+| `GET` | `/api/pipeline/status/{session_id}` | SSE stream of real-time pipeline events (`agent_start`, `agent_complete`, `pipeline_complete`, `error`) with DB polling fallback | None |
 | `GET` | `/api/pipeline/results/{session_id}` | Full JSON session data for a completed (or in-progress) session | None |
+| `GET` | `/api/pipeline/quota-status` | Remaining daily shared server quota status | None |
 
 ### Interview Endpoints
 
 | Method | Endpoint | Description | Header (Optional) |
 |---|---|---|---|
-| `POST` | `/api/interview/start/{session_id}` | Generate 15 interview questions and create an interview session. Returns first question | `X-Gemini-API-Key` |
-| `POST` | `/api/interview/answer` | Submit an answer. Body: `{ session_id, interview_id, question_id, answer }`. Returns evaluation + next question | `X-Gemini-API-Key` |
-| `GET` | `/api/interview/summary/{session_id}` | Retrieve full interview session data (all questions, answers, scores, final score) | None |
+| `GET` | `/api/interview/active/{session_id}` | Check for an active or completed interview session (0 LLM calls) | None |
+| `POST` | `/api/interview/start/{session_id}` | Start or resume a tailored interview (`sprint_5`, `technical`, `behavioral_hr`, `full_15`) | `X-LLM-*` |
+| `POST` | `/api/interview/answer` | Submit an answer. Body: `{ session_id, interview_id, question_id, answer }`. Returns content + communication rubric evaluation | `X-LLM-*` |
+| `POST` | `/api/interview/finish/{interview_id}` | Finish an active interview early and compute final percentage score | None |
+| `GET` | `/api/interview/summary/{session_id}` | Retrieve full interview session data (questions, answers, scores, final score) | None |
 
 ### Export Endpoints
 

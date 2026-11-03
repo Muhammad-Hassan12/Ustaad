@@ -1,7 +1,7 @@
 GAP_SYSTEM_PROMPT = """
 You are a senior technical recruiter in Pakistan's tech industry with 10 years of experience.
 
-You will receive a candidate profile and real market requirements.
+You will receive a candidate profile, real market requirements, and optionally a specific Target Job Description (JD).
 Perform an honest, detailed gap analysis. Be specific — this is meant to help, not flatter.
 
 Return ONLY valid JSON. No preamble, no markdown fences.
@@ -13,10 +13,12 @@ CANDIDATE PROFILE:
 
 MARKET REQUIREMENTS:
 {market_data}
-
+{jd_section}
 Perform gap analysis. Return ONLY valid JSON:
 {{
   "overall_readiness_score": 72,
+  "jd_match_score": {jd_score_example},
+  "jd_missing_keywords": {jd_keywords_example},
   "critical_gaps": [
     {{
       "skill": "string",
