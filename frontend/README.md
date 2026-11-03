@@ -1,88 +1,59 @@
-# Ustaad Frontend — Next.js 14 Application
+# Ustaad frontend
 
-The web user interface for **Ustaad (اُستاد)** — an AI Career Operating System for Pakistani tech talent.
+The Ustaad frontend provides the CV upload and Target Job Description intake, real-time parallel pipeline workspace, interactive 30/60/90-day learning roadmap, configurable mock interview simulator, browser-only 8-provider BYOK studio and printable single-column ATS resume view. It is built with Next.js 16.4.4 (App Router), React 19.3.1, TypeScript and Tailwind CSS v4.
 
-Built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Framer Motion**, and **Lucide Icons**, implementing a custom parchment & brass editorial manuscript design language.
+## Routes and views
 
----
+- **`/` (`app/page.tsx`):** Drag-and-drop PDF CV intake, Pakistani city selector, experience/education controls, optional Target Job Description tailoring input, recent-session history modal and BYOK status indicator.
+- **`/dashboard/[sessionId]` (`app/dashboard/[sessionId]/page.tsx`):** Live Server-Sent Events progress tracker (`Profile + Market` parallel stage → `Gap` → `Roadmap + CV Rewrite` parallel stage), KPI summary strip, tabbed workspace (`All`, `Overview & Gaps`, `Market`, `CV & Outreach`, `Roadmap`) and session-link sharing.
+- **`/interview/[sessionId]` (`app/interview/[sessionId]/page.tsx`):** Configurable Mock Interview 2.0 loop supporting four modes (`sprint_5`, `technical`, `behavioral_hr`, `full_15`), three difficulty tiers (`fresh_grad`, `junior`, `mid_senior`), word-count guidance, per-answer coaching + clarity scoring, early finish and full transcript review.
+- **`/resume/[sessionId]` (`app/resume/[sessionId]/page.tsx`):** Single-column, standard-heading ATS resume preview synthesized from `profile_data` and `cv_rewrite_data`, styled with `@media print` A4 rules for browser `Save as PDF` export.
+- **`/dossier/[sessionId]` (`app/dossier/[sessionId]/page.tsx`):** Executive Career Dossier summary and one-click ReportLab PDF download.
+- **`/about` (`app/about/page.tsx`):** Multi-agent architecture overview, technology stack and locally cached team profile cards.
 
-## 🎨 Design Philosophy & Features
+## Requirements
 
-- **Parchment & Brass Aesthetic**: Editorial, manuscript-styled UI with dark ink accents (`bg-ink`, `text-parchment`, `border-brass`).
-- **Real-time SSE Dashboard**: Live agent progress tracking with Server-Sent Events (`frontend/lib/sse.ts`) and zero page reloads.
-- **BYOK (Bring Your Own Key) Integration**:
-  - Secure modal dialog (`ApiKeyModal.tsx`) with password-masked key fields (`type="password"`).
-  - Quota-free key validation via `GET /api/keys/validate`.
-  - Client-side key persistence in browser `localStorage`.
-  - Automatic `X-Gemini-API-Key` header injection on pipeline start, interview start, and answer evaluation requests.
-- **Interactive AI Mock Interview Terminal**: Multi-turn Q&A interface with live scorecards and feedback rubrics.
-- **Responsive Layout**: Designed for seamless operation on mobile, tablet, and desktop viewports.
+Use **Node.js 22** (`.nvmrc` specifies `22`; Next.js 16 requires `>=20.9.0`). Configure and run the FastAPI backend separately as described in the [project README](../README.md) and [deployment guide](../docs/DEPLOYMENT.md).
 
----
-
-## 📁 Project Structure
-
-```
-frontend/
-├── app/
-│   ├── page.tsx               # Homepage with CV upload form & BYOK status caption
-│   ├── about/page.tsx         # Detailed About page with architecture & team breakdown
-│   ├── dashboard/[sessionId]/ # Live agent status & complete session metrics
-│   ├── interview/[sessionId]/ # Interactive AI Mock Interview Terminal
-│   └── dossier/[sessionId]/   # Career Dossier view & PDF export trigger
-├── components/
-│   ├── ApiKeyModal.tsx        # 🔑 Privacy-first BYOK Key settings modal
-│   ├── Navbar.tsx             # Top navigation bar with BYOK status badge
-│   ├── CVUpload.tsx           # Drag-and-drop PDF upload component
-│   ├── LedgerLine.tsx         # Custom ledger line step indicator
-│   ├── PipelineProgress.tsx   # Live agent stepper component
-│   ├── MarketSnapshot.tsx     # Real-time job market demand component
-│   ├── GapReport.tsx          # 0–100 Readiness score & skill gap report
-│   ├── RoadmapTimeline.tsx    # 30/60/90-day learning roadmap
-│   ├── CVComparison.tsx       # ATS-optimized CV bullet rewrite comparison
-│   └── AnimatedSection.tsx    # Scroll & entrance animations via Framer Motion
-└── lib/
-    ├── api.ts                 # Fetch wrapper API functions & BYOK header handling
-    └── sse.ts                 # Server-Sent Events subscriber for live status stream
-```
-
----
-
-## ⚡ Getting Started
-
-### Prerequisites
-
-- Node.js 18.x or higher
-- npm 9.x or higher
-
-### 1. Environment Setup
-
-Create a `.env.local` file in the `frontend` directory:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-# Or your deployed VPS backend URL:
-# NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-```
-
-### 2. Install Dependencies
+Install locked dependencies from `frontend/`:
 
 ```bash
-npm install
+npm ci
 ```
 
-### 3. Run Development Server
+## Environment configuration
+
+Copy `.env.example` to `.env.local` on a fresh setup:
 
 ```bash
-npm run dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the FastAPI backend (`http://localhost:8000` locally; `https://api.ustaad.systems` in production) |
 
-### 4. Build for Production
+`NEXT_PUBLIC_API_URL` is embedded into client bundles at build time; rebuild after changing it. Never place `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` or `SERPER_API_KEY` in `frontend/.env.local`.
+
+## Browser-only BYOK state
+
+User-supplied API keys and custom model selections are managed in `lib/llmConfig.ts` under `localStorage["ustaad_byok_v2"]` (automatically migrating legacy `localStorage["gemini_api_key"]` entries) and synchronized across components with React's `useSyncExternalStore`. When BYOK mode is active, `lib/api.ts` attaches `X-LLM-Provider`, `X-LLM-Model`, `X-LLM-API-Key` and optional `X-LLM-Region` headers on requests to the FastAPI backend. Switching back to **Free Server Default** omits user key headers while keeping saved provider profiles locally until explicitly cleared.
+
+## Development and production scripts
 
 ```bash
-npm run build
-npm start
+npm run dev        # Start local Next.js development server on http://localhost:3000
+npm run typecheck  # Run strict TypeScript check (tsc --noEmit)
+npm run lint       # Run ESLint 9 flat-config check
+npm run build      # Create optimized production build
+npm run start      # Serve production build
 ```
 
+## Related documentation
+
+- [Project architecture and quickstart](../README.md)
+- [LLM providers and BYOK security model](../docs/PROVIDERS_AND_BYOK.md)
+- [Supabase setup](../docs/SUPABASE_SETUP.md)
+- [VPS and Vercel deployment](../docs/DEPLOYMENT.md)
+- [Verification evidence](../docs/VERIFICATION.md)
+- [Licensing and team avatar sources](../docs/LICENSING.md)

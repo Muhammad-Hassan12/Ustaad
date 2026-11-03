@@ -1,29 +1,16 @@
-# Docker Compose for Ustaad Backend (Local Development)
-# Note: The frontend is NOT included here as it is designed to be deployed separately (e.g., on Vercel).
-# Please refer to frontend/README.md for instructions on running the Next.js frontend locally.
-#
-# Note: Supabase is an external/managed service and is not containerized here.
-# You must provide your own Supabase project URL and keys in the .env file.
-
-version: '3.8'
+# Local container configuration for the Ustaad FastAPI backend.
+# Supabase is an external managed service; configure backend/.env before starting.
+# See frontend/README.md and docs/DEPLOYMENT.md for Next.js setup and production hosting.
 
 services:
   backend:
-    build: 
+    build:
       context: ./backend
-      # Assuming there's a Dockerfile in ./backend, if not, this will need one.
-      # If you just want to run the python image directly:
-    image: python:3.10-slim
     container_name: ustaad-backend
-    working_dir: /app
-    volumes:
-      - ./backend:/app
-    command: >
-      bash -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - ./backend/.env
-    # We reference the .env file directly so no secrets are hardcoded here.
     environment:
       - PYTHONUNBUFFERED=1
+    restart: unless-stopped

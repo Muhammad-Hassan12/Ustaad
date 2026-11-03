@@ -5,35 +5,15 @@ import Link from "next/link";
 import Image from "next/image";
 import ApiKeyModal from "@/components/ApiKeyModal";
 import ResumeSessionModal from "@/components/ResumeSessionModal";
-import {
-  ActiveBYOKConfig,
-  BYOK_UPDATED_EVENT,
-  getActiveBYOKConfig,
-} from "@/lib/llmConfig";
+import { useActiveBYOKConfig } from "@/lib/llmConfig";
 import { Key, History, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
-  const [activeByok, setActiveByok] = useState<ActiveBYOKConfig | null>(null);
+  const activeByok = useActiveBYOKConfig();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-
-  const checkKeyStatus = () => {
-    if (typeof window !== "undefined") {
-      setActiveByok(getActiveBYOKConfig());
-    }
-  };
-
-  useEffect(() => {
-    checkKeyStatus();
-    window.addEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
-    window.addEventListener("storage", checkKeyStatus);
-    return () => {
-      window.removeEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
-      window.removeEventListener("storage", checkKeyStatus);
-    };
-  }, []);
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -196,7 +176,6 @@ export default function Navbar() {
       <ApiKeyModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onKeyUpdated={checkKeyStatus}
       />
 
       <ResumeSessionModal

@@ -1,626 +1,304 @@
-# Ustaad (اُستاد) — AI Career OS for Pakistani Tech Talent
+# Ustaad
 
-<div align="center">
+**Multi-agent career intelligence, live Pakistani market grounding and configurable mock interviews for software graduates.**
 
-[![Kaggle Capstone](https://img.shields.io/badge/Kaggle-AI%20Agents%20Capstone%202026-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)
-[![Google Gemini](https://img.shields.io/badge/Powered%20By-Gemini%203.1%20Flash%20Lite-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-22c55e?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
+[Open Ustaad](https://www.ustaad.systems)
 
-<br/>
+[License: Apache 2.0](LICENSE)
 
-> **Ustaad** *(Urdu: اُستاد — Teacher / Master)* is an AI-powered **Career Operating System** purpose-built to help Pakistani technology graduates navigate, prepare for, and succeed in the local tech job market.
+[Methodology & team](https://www.ustaad.systems/about) · [BYOK & provider model](docs/PROVIDERS_AND_BYOK.md) · [Verification record](docs/VERIFICATION.md)
 
-**"The career coach Pakistan never had."**
+Ustaad turns a graduate's PDF CV and target role into a grounded career assessment tailored to Pakistan's technology job market. A parallel multi-agent pipeline extracts structured candidate data, queries live Pakistani job listings (`rozee.pk`, `mustakbil.com`, LinkedIn Pakistan and local hiring boards), evaluates skill and job-description gaps, builds a 30/60/90-day free learning roadmap and rewrites CV experience into quantified ATS-ready bullets.
 
-</div>
+The platform runs free out of the box on a server-locked `gemini-3.1-flash-lite` baseline, while an optional browser-only Bring Your Own Key (BYOK) studio lets users run analyses and mock interviews against eight allowlisted LLM providers—including custom model identifiers—without storing or logging user API keys on the server. Session state and interview transcripts persist in Supabase PostgreSQL so sessions can be resumed, printed as a single-column A4 ATS resume or exported as a ReportLab PDF Career Dossier.
 
-## 🎥 Live Demo
-> Full walkthrough video coming soon — but major working preview is covered in this post (Excluding BYOK, Session ID Recall... etc) [LinkedIn Post](https://www.linkedin.com/posts/syed-muhammad-hassan-aa112928b_kaggle-googleai-aiagents-ugcPost-7492196798460096512-hgFf/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAEZR4NkBOFjpVCOgh3VH-_Pbuq1LtVagS5M)
+## Contents
 
----
+- [Origin — Kaggle × Google AI Agents Capstone](#origin--kaggle--google-ai-agents-capstone)
+- [Capabilities](#capabilities)
+- [Career analysis workflow](#career-analysis-workflow)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [API interface](#api-interface)
+- [Privacy, BYOK and operational boundaries](#privacy-byok-and-operational-boundaries)
+- [Verification](#verification)
+- [Operations](#operations)
+- [Repository structure](#repository-structure)
+- [Documentation](#documentation)
+- [Team](#team)
+- [License](#license)
 
-## 📋 Table of Contents
+## Origin — Kaggle × Google AI Agents Capstone
 
-1. [The Problem & Mission](#-the-problem--mission)
-2. [Competition Track](#-competition-track)
-3. [Bring Your Own Key (BYOK) Feature](#-byok--bring-your-own-gemini-key)
-4. [Multi-Agent Architecture](#️-multi-agent-architecture--pipeline)
-5. [The 5+2 Agents — Detailed Breakdown](#-the-52-agents--detailed-breakdown)
-6. [Course Concepts Demonstrated](#-course-concepts-demonstrated)
-7. [Tech Stack](#️-tech-stack)
-8. [Project Structure](#-project-structure)
-9. [Setup & Installation](#-setup--installation)
-10. [Local Deployment (Docker)](#-local-deployment-docker)
-11. [Testing](#-testing)
-12. [Environment Variables](#-environment-variables)
-13. [API Reference](#-api-reference)
-14. [Contributing & Code of Conduct](#-contributing--code-of-conduct)
-15. [Future Roadmap](#-future-roadmap)
-16. [The Team](#-the-team)
-17. [License](#-license)
+Ustaad originated as a submission to the **Kaggle × Google 5-Day AI Agents Intensive Capstone** and has evolved into **Ustaad 2.0**, an open-source career operating system maintained by **AgenticEra Systems**. The architecture demonstrates five core agentic patterns in a single low-cost deployment: parallel + sequential DAG orchestration (`asyncio.gather`), live search tool grounding with a 48-hour role-and-city cache, structured JSON outputs with 1-shot self-repair, multi-turn stateful interview evaluation and request-scoped multi-provider BYOK routing.
 
----
+**For reviewers and contributors:** start with [LLM providers and BYOK](docs/PROVIDERS_AND_BYOK.md), [recorded verification](docs/VERIFICATION.md), [Supabase setup](docs/SUPABASE_SETUP.md) and [deployment procedures](docs/DEPLOYMENT.md).
 
-## 🎯 The Problem & Mission
+## Capabilities
 
-Every year, **tens of thousands of CS and IT graduates** enter Pakistan's technology sector. A critical disconnect persists between university curricula and real industry demands. Graduates face:
+| Area | Functionality |
+| --- | --- |
+| CV parsing and profiling | Text extraction via PyMuPDF (`fitz`) and structured JSON normalization of education, skills, projects, certifications and detected CV weaknesses |
+| Pakistani market grounding | Four concurrent Serper.dev search queries per cache miss across Pakistani job boards, PKR salary estimation, demand classification and a 48-hour role+city cache |
+| Gap and Target JD analysis | Quantified `0–100` Readiness Score, prioritized critical vs. nice-to-have gaps, plus optional `jd_match_score` and missing-keyword extraction against a pasted job description |
+| Interactive 30/60/90 roadmap | Weekly execution plan using free learning resources, persistent browser task checkboxes and live readiness-lift projection |
+| ATS CV rewrite and outreach | Quantified before/after experience rewrites, structured project bullets, ATS score estimation, tailored cover-note/referral templates and a printable A4 `/resume/[sessionId]` route |
+| Mock Interview 2.0 | Four interview modes (`sprint_5`, `technical`, `behavioral_hr`, `full_15`), three calibration tiers (`fresh_grad`, `junior`, `mid_senior`), per-answer content + clarity scoring and early finish |
+| Multi-provider BYOK studio | Free server default locked to `gemini-3.1-flash-lite`; optional browser-local BYOK across 8 providers (`gemini`, `openai`, `anthropic`, `deepseek`, `qwen`, `glm`, `groq`, `openrouter`) with custom model IDs |
+| Career Dossier export | Server-rendered ReportLab PDF consolidating profile metrics, PKR market benchmarks, skill gaps, rewritten CV bullets, roadmap milestones and interview results |
 
-| Challenge | Reality |
-|---|---|
-| **Curriculum Gaps** | No clear signal on which skills Pakistani employers in Karachi, Lahore, and Islamabad actually need |
-| **ATS Incompatibility** | Resumes that fail automated Applicant Tracking System screening before any human ever reads them |
-| **No Interview Prep** | Little to no access to structured, domain-specific mock interview practice |
-| **Career Blindness** | No benchmarking mechanism to understand where they stand vs. market demand |
+## Career analysis workflow
 
-**Ustaad** solves this by serving as a fully-automated, AI-driven personal career concierge. A user uploads a single PDF CV, specifies their target role and city, and the system delivers:
+1. **Upload a PDF CV and select a target role.** Choose a Pakistani tech hub (Karachi, Lahore, Islamabad/Rawalpindi, Peshawar, Faisalabad, Multan or Remote) and optionally paste a specific Target Job Description for tailored keyword matching.
+2. **Select default or BYOK execution.** Run immediately on the shared `gemini-3.1-flash-lite` server key, or configure a personal API key and preset/custom model ID in the browser BYOK modal.
+3. **Stream parallel pipeline execution.** `Profile Agent` and `Market Intelligence Agent` execute concurrently (`Stage 1`), feed into `Gap Analysis Agent` (`Stage 2`), and fan out concurrently to `Roadmap Agent` and `CV Rewrite Agent` (`Stage 3`) over Server-Sent Events.
+4. **Inspect the workspace and track progress.** Review KPI metrics, filter views across `Overview & Gaps`, `Market`, `CV & Outreach` and `Roadmap`, check off weekly tasks and copy outreach templates.
+5. **Practice with Mock Interview 2.0.** Launch a 5-question rapid sprint, a focused technical or STAR behavioral loop, or a full 15-question interview calibrated to experience level; receive `0–10` content and communication clarity feedback after every answer.
+6. **Export deliverables.** Print or save a clean single-column A4 ATS resume from `/resume/[sessionId]` via browser `Save as PDF`, or download the executive ReportLab Career Dossier PDF.
 
-- ✅ **Real-time market snapshot** grounded in live Pakistani job board data
-- ✅ **Honest skill gap analysis** with a quantified readiness score
-- ✅ **30/60/90-day personalized learning roadmap** with free resource links
-- ✅ **ATS-optimized CV rewrite** with keyword improvements and before/after comparison
-- ✅ **Multi-turn mock interview** (15 questions) with AI scoring and feedback on each answer
-- ✅ **Downloadable PDF Career Dossier** summarizing all findings
-- ✅ **BYOK (Bring Your Own Key)** support — users can supply their Google AI Studio Gemini API key for private, unthrottled sessions
-
----
-
-## 🔑 Multi-Provider BYOK — Bring Your Own Key + Custom Models
-
-Ustaad 2.0 pairs a **locked zero-friction free default** with a **Multi-Provider BYOK Studio**:
-
-- **Free Server Default (Untouched)**: When no user key is supplied, Ustaad runs strictly on `Google Gemini` (`gemini-3.1-flash-lite`) via the server's shared tier with automatic `KAGGLE_LLM_URL` failover.
-- **8 Supported BYOK Providers + Custom Model IDs**: Users who supply their own key can choose from **Google Gemini**, **OpenAI (ChatGPT)**, **Anthropic (Claude)**, **DeepSeek**, **Alibaba Qwen** (`intl` & `cn`), **Zhipu GLM** (`cn` & `intl`), **Groq**, and **OpenRouter** — selecting curated presets or typing any custom model ID.
-- **Privacy & Security First**: User keys are stored **strictly in local browser storage (`localStorage`)**, masked in the UI, validated against an SSRF-safe provider allowlist, and scrubbed by `redact_secrets()` before any error string leaves the backend.
-- **Smart Validation**: `GET/POST /api/keys/validate` verifies provider credentials and custom model accessibility before launching pipeline or interview tasks.
-- **Header Transmission**: BYOK requests transmit `X-LLM-Provider`, `X-LLM-Model`, `X-LLM-API-Key` (and optional `X-LLM-Region`, plus backward-compatible `X-Gemini-API-Key`) over HTTPS.
-
-## 🏆 Competition Track
-
-**Submitted to**: [AI Agents Intensive — Vibe Coding Capstone 2026](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)
-
-**Track**: **Agents for Business / Agents for Good**
-
-Ustaad addresses a dual mandate:
-- **Business**: Helps companies find better-prepared candidates (reduced hiring friction)
-- **Good**: Democratizes career coaching for graduates who cannot afford professional coaching services
-
----
-
-## 🏗️ Multi-Agent Architecture & Pipeline
-
-Ustaad's backend orchestrates a **5-Agent Core Pipeline** with 2 additional interactive modules (Interview + PDF Export), using sequential dependencies and concurrent execution pathways. The architecture maximizes efficiency through `asyncio.gather()` parallelism and streams real-time progress to the frontend via Server-Sent Events (SSE).
+## Architecture
 
 ```mermaid
-flowchart TD
-    subgraph Input["👤 User Input"]
-        A["Upload PDF CV + Target Role + City"]
-    end
-
-    subgraph Pipeline["🤖 Core Pipeline — FastAPI + asyncio"]
-        B["A1: Profile Agent\n🔍 Extract & structure CV"] --> C
-        C["A2: Market Agent\n📊 Live job board search"] --> D
-        D["A3: Gap Agent\n⚡ Compute readiness score"]
-
-        D --> E["A4: Roadmap Agent\n🗺️ Build 30/60/90-day plan"]
-        D --> F["A5: CV Rewrite Agent\n📝 ATS optimization"]
-
-        E -.- G["asyncio.gather()\n⚡ Parallel Execution"]
-        F -.- G
-    end
-
-    subgraph Interactive["🎙️ Interactive Modules — User-Triggered"]
-        H["A6: Interview Module\n🎤 Multi-turn Q&A + Scoring"]
-        I["A7: Export Module\n📄 PDF Career Dossier"]
-    end
-
-    subgraph Output["📄 Deliverables"]
-        J[Market Snapshot]
-        K[Gap Report]
-        L[Learning Roadmap]
-        M[CV Before/After]
-        N[Interview Scorecard]
-        O[PDF Dossier Download]
-    end
-
-    A --> B
-    G --> J & K & L & M
-    G -.-> H
-    H --> N
-    G -.-> I
-    I --> O
+flowchart LR
+    Browser["Next.js 16 Workspace & BYOK Studio"] -->|HTTPS + SSE| API["FastAPI Router & BYOK Guard"]
+    API --> Parser["PyMuPDF CV Parser"]
+    API --> Orch["Async DAG Orchestrator"]
+    Orch --> S1["Stage 1 (Parallel): Profile + Market Agents"]
+    S1 --> Serper["Serper.dev Search + 48h Cache"]
+    S1 --> S2["Stage 2: Gap & Target JD Agent"]
+    S2 --> S3["Stage 3 (Parallel): Roadmap + CV Rewrite Agents"]
+    API --> Interview["Stateful Mock Interview Agent"]
+    API --> Export["ReportLab Dossier Generator"]
+    Orch --> LLM["Unified LLM Client & JSON Self-Repair"]
+    Interview --> LLM
+    LLM -->|Default Lock| Gemini["Gemini 3.1 Flash Lite"]
+    LLM -->|Allowlisted BYOK| Providers["8 LLM Providers + Custom Models"]
+    Orch --> DB[("Supabase PostgreSQL")]
+    Interview --> DB
+    Export --> DB
 ```
 
-### Pipeline Flow Summary
+Pipeline stages write incremental progress to Supabase PostgreSQL under per-session `asyncio.Lock` coordination so parallel agents never clobber `agents_completed`. If a user refreshes mid-analysis after the one-use in-memory SSE queue detaches, `GET /api/pipeline/status/{session_id}` automatically transitions to lightweight database state polling until completion.
 
-```
-Upload CV → [A1 Profile] → [A2 Market] → [A3 Gap]
-                                              ↙          ↘
-                                    [A4 Roadmap]  [A5 CV Rewrite]  ← parallel via asyncio.gather()
-                                              ↘          ↙
-                                        Dashboard Results
-                                              ↓
-                              [A6 Interview] ← user-triggered
-                              [A7 PDF Export] ← user-triggered
-```
+| Component | Implementation |
+| --- | --- |
+| Frontend | Next.js 16.4.4 (App Router), React 19.3.1, TypeScript 5, Tailwind CSS v4, Framer Motion |
+| Backend | FastAPI 0.162, Uvicorn 0.54, HTTPX 0.28, Python 3.12 |
+| Persistence | Supabase PostgreSQL (`sessions`, `interview_sessions`, optional `quota_tracker`) |
+| Search grounding | Serper.dev Google Search API with 48-hour Supabase role+city cache |
+| Document processing | PyMuPDF 2.1 (PDF text extraction) and ReportLab 5.1 (PDF Career Dossier generation) |
+| LLM routing | Request-scoped `LLMConfig` supporting Gemini native REST, Anthropic Messages and OpenAI-compatible adapters |
 
-> **Note**: Agents A1–A5 execute automatically as a pipeline when a CV is submitted. Agent A6 (Interview) is triggered separately when the user clicks "Start Mock Interview" from the dashboard. Agent A7 (PDF Export) generates on-demand when the user clicks "Download Career Dossier".
+Backend dependencies are pinned in [`backend/requirements.txt`](backend/requirements.txt) and [`backend/requirements-dev.txt`](backend/requirements-dev.txt). Frontend packages are locked in [`frontend/package-lock.json`](frontend/package-lock.json).
 
----
-
-## 🤖 The 5+2 Agents — Detailed Breakdown
-
-### Core Pipeline Agents (Automated)
-
-| # | Agent | Role | Input | Output | LLM |
-|---|---|---|---|---|---|
-| **A1** | **Profile Agent** | Parses raw CV text into a structured JSON resume profile (education, experience, skills, projects) | Raw CV text + target role + city + experience + education | `ProfileSchema` JSON | Gemini 3.1 Flash Lite |
-| **A2** | **Market Intelligence Agent** | Runs 4 targeted Serper.dev Google searches for live Pakistani job market data, then passes results to Gemini for structured extraction | Target role + city | `MarketDataSchema` JSON | Gemini 3.1 Flash Lite |
-| **A3** | **Gap Analysis Agent** | Compares candidate profile vs. market demand, computes a quantified readiness score (0–100) and lists critical skill gaps | A1 Profile + A2 Market data | `GapAnalysisSchema` JSON | Gemini 3.1 Flash Lite |
-| **A4** | **Roadmap Agent** | Builds a milestone-driven 30/60/90-day learning plan with free resource links targeted at closing identified gaps | A3 Gap data | `RoadmapSchema` JSON | Gemini 3.1 Flash Lite |
-| **A5** | **CV Rewrite Agent** | Rewrites CV bullet points and summary for ATS optimization; estimates ATS score improvement | A1 Profile + A2 Market + A3 Gap | `CVRewriteSchema` JSON | Gemini 3.1 Flash Lite |
-
-### Interactive Modules (User-Triggered)
-
-| # | Module | Role | Input | Output | Engine |
-|---|---|---|---|---|---|
-| **A6** | **Interview Module** | Generates 15 role-specific questions (5 technical, 5 behavioral, 5 HR), then evaluates each user answer on a 1–10 rubric with detailed feedback | A1 Profile + A2 Market + user answers | Per-answer scoring + final percentage | Gemini 3.1 Flash Lite |
-| **A7** | **Export Module** | Aggregates all pipeline outputs into a formatted, styled PDF Career Dossier using ReportLab | Full session data from Supabase | Downloadable PDF | ReportLab SDK |
-
----
-
-## 🎓 Course Concepts Demonstrated
-
-This project directly demonstrates **4 of the core agentic paradigms** from the Google AI Agents Intensive course:
-
-### 1. ✅ Multi-Agent Collaboration & Orchestration
-The `orchestrator.py` coordinates 5 specialized agents in a dependency graph. Agents 4 and 5 are dispatched **in parallel** using `asyncio.gather()`, reducing total pipeline time by ~40% compared to sequential execution. Each agent maintains a single responsibility and communicates exclusively through typed JSON schemas.
-
-```python
-# Parallel execution of Roadmap + CV Rewrite agents
-roadmap_data, cv_rewrite_data = await asyncio.gather(
-    run_roadmap_agent(gap_data),
-    run_cv_rewrite_agent(profile_data, market_data, gap_data)
-)
-```
-
-### 2. ✅ Tool Use & Real-Time Grounding
-The **Market Intelligence Agent** calls **Serper.dev** to execute 4 live Google Search queries per session, targeting Pakistani job market data:
-```
-"{target_role} jobs {target_city} Pakistan"
-"{target_role} required skills Pakistan 2026"
-"{target_role} salary Pakistan PKR"
-"top companies hiring {target_role} Pakistan"
-```
-Results are geo-targeted (`gl: "pk"`) and passed to Gemini for structured extraction. This grounds every downstream analysis in **real market data**, not LLM training set approximations — a fundamental agentic capability.
-
-### 3. ✅ Structured Outputs & Schema Hardening
-Every agent enforces a strict output schema via Gemini's `response_mime_type="application/json"`. The `parse_gemini_json()` utility implements a **4-layer parsing fallback**:
-1. Direct `json.loads()`
-2. Markdown fence stripping + JSON object extraction
-3. Trailing comma cleanup via regex
-4. `ast.literal_eval()` for Python-like dict strings (single quotes)
-
-This makes the pipeline resilient against malformed LLM responses across both Gemini and fallback models.
-
-### 4. ✅ Production-Focused Async Pipeline Design
-- **Server-Sent Events (SSE)**: Pipeline status events are streamed in real-time to the Next.js frontend via an `asyncio.Queue` + SSE generator pattern, giving users live progress updates without polling.
-- **Exponential Backoff**: Gemini calls retry up to 8 times with `min(2^attempt, 15)` second waits on rate-limit errors (429).
-- **Model Failover**: If Gemini quota is exhausted, the pipeline automatically falls back to a secondary model endpoint (configurable via `KAGGLE_LLM_URL`). This was used during development for rapid testing when the Gemini free tier quota exhausted quickly.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Frontend** | Next.js 14.2, TypeScript, React 18 | App Router, SSR/CSR hybrid pages |
-| **Styling** | Tailwind CSS 3.4, Framer Motion | Responsive UI, scroll/mount animations |
-| **Icons** | Lucide React | Consistent professional icon set |
-| **File Upload** | react-dropzone | Drag-and-drop PDF CV upload |
-| **Markdown** | react-markdown | Rendering formatted AI responses |
-| **Backend** | Python 3.10+, FastAPI | Async REST API + SSE endpoint |
-| **PDF Parsing** | PyMuPDF (fitz) | CV text extraction from PDF uploads |
-| **AI/LLM** | Google Gemini 3.1 Flash Lite | Core agent pipeline backbone |
-| **Search API** | Serper.dev | Real-time Google Search for job board grounding |
-| **Database** | Supabase (PostgreSQL) | Session state, agent outputs, interview history |
-| **PDF Generation** | ReportLab | Career Dossier PDF output |
-| **HTTP Client** | httpx | Async HTTP calls (Serper, fallback LLM) |
-
----
-
-## 📂 Project Structure
-
-```
-ustaad/
-├── backend/
-│   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── prompts/                # LLM system instruction templates
-│   │   │   ├── __init__.py
-│   │   │   ├── profile_prompt.py   # CV parser schema & instructions
-│   │   │   ├── market_prompt.py    # Job board search + analysis prompt
-│   │   │   ├── gap_prompt.py       # Gap scoring rubric & schema
-│   │   │   ├── roadmap_prompt.py   # 30/60/90 learning plan schema
-│   │   │   ├── cv_rewrite_prompt.py# ATS optimization instructions
-│   │   │   └── interview_prompt.py # Q&A generation + scoring rubric
-│   │   ├── gemini_utils.py         # Shared LLM client, retry, JSON parsing, fallback
-│   │   ├── orchestrator.py         # Pipeline manager (SSE queue, parallel flows)
-│   │   ├── profile_agent.py        # A1: CV Parser Agent
-│   │   ├── market_agent.py         # A2: Market Intelligence Agent
-│   │   ├── gap_agent.py            # A3: Gap Analysis Agent
-│   │   ├── roadmap_agent.py        # A4: Learning Roadmap Agent
-│   │   ├── cv_rewrite_agent.py     # A5: ATS CV Rewrite Agent
-│   │   └── interview_agent.py      # A6: Mock Interview (question gen + answer eval)
-│   ├── db/
-│   │   ├── __init__.py
-│   │   ├── supabase_client.py      # Supabase async client helpers
-│   │   └── schemas.sql             # SQL table definitions for Supabase
-│   ├── routers/
-│   │   ├── __init__.py
-│   │   ├── pipeline.py             # POST /start, GET /status (SSE), GET /results
-│   │   ├── interview.py            # POST /start, POST /answer, GET /summary
-│   │   ├── keys.py                 # GET /validate (BYOK key validation)
-│   │   └── export.py               # GET /dossier/{session_id} → PDF download
-│   ├── tools/
-│   │   ├── __init__.py
-│   │   ├── cv_parser.py            # PyMuPDF PDF text extraction
-│   │   ├── job_scraper.py          # Serper.dev Google Search integration
-│   │   └── pdf_generator.py        # ReportLab career dossier builder
-│   ├── main.py                     # FastAPI app entry + CORS config
-│   ├── requirements.txt
-│   ├── generate_test_cv.py         # Script to generate a mock CV for testing
-│   ├── test_answer.py              # Tests for interview answering logic
-│   ├── test_pipeline.py            # Tests for the core pipeline
-│   ├── test_qwen.py                # Tests for Qwen fallback integration
-│   └── .env.example
-├── frontend/
-│   ├── app/
-│   │   ├── about/page.tsx          # About page (team, architecture, features)
-│   │   ├── dashboard/[sessionId]/  # Live pipeline dashboard with SSE
-│   │   ├── dossier/[sessionId]/    # Full dossier results view
-│   │   ├── interview/[sessionId]/  # Interactive mock interview terminal
-│   │   ├── globals.css             # Global styles & Tailwind base
-│   │   ├── icon.png                # App favicon (PNG)
-│   │   ├── layout.tsx              # Root layout (nav, theme, footer)
-│   │   └── page.tsx                # Landing page with CV upload form
-│   ├── components/
-│   │   ├── AnimatedCounter.tsx     # Animated number counter utility
-│   │   ├── AnimatedSection.tsx     # Framer motion fade-in wrapper
-│   │   ├── ApiKeyModal.tsx         # BYOK configuration modal
-│   │   ├── CVComparison.tsx        # Before/after CV diff view
-│   │   ├── CVUpload.tsx            # Drag-and-drop PDF upload dropzone
-│   │   ├── ErrorBoundary.tsx       # React error boundary fallback
-│   │   ├── Footer.tsx              # Application footer
-│   │   ├── GapReport.tsx           # Skills gap visualization cards
-│   │   ├── LedgerLine.tsx          # Animated ledger line divider
-│   │   ├── MarketSnapshot.tsx      # Job market demand dashboard
-│   │   ├── Navbar.tsx              # Main application navigation
-│   │   ├── PipelineProgress.tsx    # Real-time SSE-driven step tracker
-│   │   ├── ResumeSessionModal.tsx  # Modal to resume a previous session
-│   │   ├── RoadmapTimeline.tsx     # 30/60/90 roadmap timeline
-│   │   ├── ScrollProgress.tsx      # Scroll progress indicator
-│   │   └── Skeleton.tsx            # Loading skeleton placeholders
-│   ├── lib/
-│   │   ├── api.ts                  # Typed API fetch wrappers (with ngrok bypass)
-│   │   └── sse.ts                  # Custom fetch-based SSE stream reader
-│   ├── public/
-│   │   └── Favicon.png             # High-res logo/favicon asset
-│   ├── package.json
-│   ├── tailwind.config.ts
-│   ├── next.config.mjs
-│   ├── tsconfig.json
-│   ├── .env.example
-│   ├── .env.local
-│   └── .eslintrc.json
-├── docker-compose.yml              # Local backend containerization
-├── CONTRIBUTING.md                 # Contribution guidelines
-├── CODE_OF_CONDUCT.md              # Code of conduct
-├── README.md
-├── LICENSE
-└── .gitignore
-```
-
----
-
-## 🚀 Setup & Installation
+## Installation
 
 ### Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- A [Supabase](https://supabase.com/) project (free tier works)
-- A [Google AI Studio](https://aistudio.google.com/) account (for Gemini API key)
-- A [Serper.dev](https://serper.dev/) account (for job search API key)
+- **Python 3.12** and **Node.js 22** (`frontend/.nvmrc`).
+- A **Supabase** project (free tier is sufficient).
+- A **Google Gemini API key** (Google AI Studio) and a **Serper.dev API key** for the backend.
 
----
+For a full Ubuntu 24.04 VPS setup with `systemd`, Caddy HTTPS and Vercel frontend hosting, follow the [deployment guide](docs/DEPLOYMENT.md).
 
-### Step 1: Database Setup (Supabase)
+### 1. Install dependencies
 
-1. Create a free project at [Supabase](https://supabase.com/)
-2. Open **SQL Editor** and run the schema from `backend/db/schemas.sql`:
-
-```sql
--- Sessions table: stores pipeline state and all agent outputs
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  status TEXT DEFAULT 'pending',
-
-  -- User inputs
-  candidate_name TEXT,
-  target_role TEXT,
-  target_city TEXT,
-  cv_text TEXT,
-
-  -- Agent outputs (JSONB)
-  profile_data JSONB,
-  market_data JSONB,
-  gap_data JSONB,
-  roadmap_data JSONB,
-  cv_rewrite_data JSONB,
-
-  -- Pipeline tracking
-  agents_completed TEXT[] DEFAULT '{}',
-  current_agent TEXT,
-  error_message TEXT
-);
-
--- Interview sessions: stores generated questions, user answers, and scores
-CREATE TABLE interview_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-  questions JSONB,
-  current_question_index INT DEFAULT 0,
-  answers JSONB DEFAULT '[]',
-  scores JSONB DEFAULT '[]',
-  final_score FLOAT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Row Level Security
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE interview_sessions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON sessions FOR ALL USING (true);
-CREATE POLICY "Allow all" ON interview_sessions FOR ALL USING (true);
-```
-
----
-
-### Step 2: Backend Setup (FastAPI)
+From the repository root:
 
 ```bash
-# Navigate to backend
+python3.12 -m venv backend/venv
+backend/venv/bin/pip install -r backend/requirements-dev.txt
+npm --prefix frontend ci
+```
+
+### 2. Initialize Supabase
+
+Open **SQL Editor** in your Supabase dashboard and run [`backend/db/schemas.sql`](backend/db/schemas.sql) to create `sessions` and `interview_sessions`. See [Supabase configuration](docs/SUPABASE_SETUP.md) for the optional `quota_tracker` table and JSONB schema details.
+
+### 3. Configure the environment
+
+Copy the environment templates on a fresh checkout:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+chmod 600 backend/.env frontend/.env.local
+```
+
+Populate `backend/.env` and `frontend/.env.local` using the tables in [Configuration](#configuration).
+
+### 4. Check and build
+
+```bash
+cd backend && ./venv/bin/pytest -q --tb=short && cd ..
+npm --prefix frontend run typecheck
+npm --prefix frontend run lint
+npm --prefix frontend run build
+```
+
+### 5. Run the application
+
+Start the backend and frontend in separate terminals:
+
+```bash
+# Terminal 1 — FastAPI backend on http://127.0.0.1:8000
 cd backend
+./venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
-# Create virtual environment
-python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-# Activate (macOS/Linux)
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# → Edit .env with your API keys (see Environment Variables section below)
-
-# Start the backend server
-uvicorn main:app --reload --port 8000
-```
-
-Backend runs at `http://localhost:8000`. Health check: `GET /health`
-
----
-
-### Step 3: Frontend Setup (Next.js)
-
-```bash
-# Navigate to frontend (from project root)
+# Terminal 2 — Next.js frontend on http://localhost:3000
 cd frontend
-
-# Install Node dependencies
-npm install
-
-# Configure environment
-cp .env.example .env.local
-# → Set NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Start the development server
 npm run dev
 ```
 
-Frontend runs at `http://localhost:3000`
+## Configuration
 
----
+### Backend: `backend/.env`
 
-## 🐳 Local Deployment (Docker)
+| Variable | Purpose |
+| --- | --- |
+| `GEMINI_API_KEY` | Server Google AI Studio key used for free default requests |
+| `GEMINI_MODEL` | Default server model; defaults to `gemini-3.1-flash-lite` |
+| `SERPER_API_KEY` | Serper.dev API key for live Pakistani job-market search grounding |
+| `SUPABASE_URL` | Dedicated Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Server-only Supabase service-role key for session and interview persistence |
+| `CORS_ORIGINS` | Comma-separated allowed browser origins (`http://localhost:3000` locally) |
+| `KAGGLE_LLM_URL` | Optional secondary OpenAI-compatible failover URL when the default Gemini key hits `429`/`503` |
 
-If you prefer to run the backend without manually setting up Python environments, you can use the provided `docker-compose.yml`. 
+### Frontend: `frontend/.env.local`
 
-> **Note**: This docker-compose is for the **backend only** to aid local development and exploration. The frontend is designed to be deployed separately (e.g., on Vercel). Supabase is also treated as an external managed service.
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Public URL of the FastAPI backend (`http://localhost:8000` locally; `https://api.ustaad.systems` in production) |
+
+`NEXT_PUBLIC_API_URL` is embedded into client bundles at build time; rebuild the frontend after changing it. Server secrets (`SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`, `SERPER_API_KEY`) must never be placed in `frontend/.env.local`.
+
+## API interface
+
+| Endpoint | Method and purpose |
+| --- | --- |
+| `/health` | `GET`: service liveness probe |
+| `/api/pipeline/start` | `POST`: validate PDF upload, create session and start background DAG pipeline |
+| `/api/pipeline/status/{session_id}` | `GET`: stream real-time SSE agent progress with DB-polling recovery on reconnect |
+| `/api/pipeline/results/{session_id}` | `GET`: retrieve consolidated session status and agent JSONB outputs |
+| `/api/pipeline/quota-status` | `GET`: inspect shared daily server-default request capacity |
+| `/api/interview/active/{session_id}` | `GET`: check for an existing in-progress or completed mock interview |
+| `/api/interview/start/{session_id}` | `POST`: generate or resume a tailored interview (`mode`, `difficulty`, `force_new`) |
+| `/api/interview/answer` | `POST`: score one candidate answer (`0–10` content + clarity) and advance state |
+| `/api/interview/finish/{interview_id}` | `POST`: conclude an active interview early and compute `final_score` on answered items |
+| `/api/interview/summary/{session_id}` | `GET`: fetch full interview questions, answers, coaching scores and hiring signal |
+| `/api/export/dossier/{session_id}` | `GET`: generate and download the ReportLab PDF Career Dossier |
+| `/api/keys/providers` | `GET`: list the locked server default and the 8 allowlisted BYOK providers/presets |
+| `/api/keys/validate` | `GET` / `POST`: verify either the server key or caller BYOK headers + custom model ID |
+
+## Privacy, BYOK and operational boundaries
+
+- **Server-default lock:** Requests without a non-empty `X-LLM-API-Key` (or legacy `X-Gemini-API-Key`) ignore client `X-LLM-Provider` and `X-LLM-Model` headers and execute strictly on `gemini-3.1-flash-lite`.
+- **Browser-local BYOK keys:** User API keys are stored only in browser `localStorage` (`ustaad_byok_v2`), sent over HTTPS headers per request, held transiently in memory during upstream execution and never persisted to Supabase or server logs.
+- **SSRF and path-injection protection:** Upstream base URLs come exclusively from the server-side `PROVIDER_REGISTRY` allowlist, and model identifiers are validated against `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$` (`..` rejected).
+- **Secret redaction:** `redact_secrets()` scrubs caller keys and known token prefixes before error messages reach HTTP responses, SSE streams or `sessions.error_message`.
+- **Session capability URLs:** Ustaad requires no user login; each `session_id` UUID acts as the bearer link for viewing that session's dashboard, resume and dossier. Treat shared session URLs as private links.
+- **Advisory scoring:** Readiness, ATS match, PKR salary bands and interview scores are LLM-generated decision aids derived from CV text and public search snippets, not guarantees of employer screening or compensation.
+
+### Default limits
+
+| Setting | Default |
+| --- | --- |
+| Maximum CV upload size | 5 MiB (`application/pdf` only) |
+| Minimum extracted CV text | 50 characters (rejects image-only scanned PDFs with HTTP `422`) |
+| Target role length | Up to 200 characters |
+| Optional Target Job Description | Up to 8,000 characters enforced server-side (6,000-character UI input cap) |
+| Interview answer length | Up to 5,000 characters per question |
+| Market intelligence cache TTL | 48 hours per case-insensitive `(target_role, target_city)` pair |
+| Shared server daily safeguard | 250 default-key pipeline runs per UTC day (BYOK runs are uncapped by Ustaad) |
+| Allowlisted BYOK providers | 8 (`gemini`, `openai`, `anthropic`, `deepseek`, `qwen`, `glm`, `groq`, `openrouter`) |
+
+## Verification
+
+The recorded verification checks on **3 November 2026** include:
+
+| Check | Result |
+| --- | --- |
+| Backend regression suite (`pytest`) | 6 test groups passed on Python 3.12.3 (`fastapi 0.162.0`, `PyMuPDF 2.1`, `reportlab 5.1.0`) |
+| Frontend TypeScript & ESLint 9 | `npm run typecheck` and `npm run lint` passed with 0 errors and 0 warnings |
+| Frontend production build | Next.js `16.4.4` (Turbopack) + React `19.3.1` compiled and prerendered cleanly on Node `v22.23.4` |
+| BYOK & SSRF security boundaries | Server-default lock, 8-provider routing, model-ID regex guards, `<think>` stripping, 1-shot JSON repair and secret redaction verified |
+
+See the [verification record](docs/VERIFICATION.md) for detailed coverage and evaluation boundaries. Reproduce the full local check suite from the repository root:
 
 ```bash
-# Start the backend via Docker
-docker-compose up -d --build
+cd backend && ./venv/bin/pytest -q --tb=short && cd ..
+npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run build
 ```
-The API will be available at `http://localhost:8000`.
 
----
+## Operations
 
-## 🧪 Testing
-
-Before submitting any Pull Requests, please ensure all tests pass.
+Health, provider-catalog and daily-quota probes verify a running backend without consuming LLM or search credits:
 
 ```bash
-# Navigate to the backend
-cd backend
-
-# Run the test suite using pytest
-pytest
+curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8000/api/keys/providers
+curl --fail http://127.0.0.1:8000/api/pipeline/quota-status
 ```
 
----
+For containerized backend operation using the repository's non-root `python:3.12-slim` image:
 
-## 🔐 Environment Variables
-
-### Backend (`backend/.env`)
-
-```env
-# AI / LLM
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-3.1-flash-lite
-
-# Search / Grounding
-SERPER_API_KEY=your_serper_dev_api_key_here
-
-# Database
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your_supabase_service_role_key
-
-# CORS (comma-separated list of allowed origins)
-CORS_ORIGINS=http://localhost:3000
-
-# Optional: override default Gemini model
-# GEMINI_MODEL=gemini-3.1-flash-lite
-
-# Optional: secondary fallback model endpoint (OpenAI-compatible)
-# Used for rapid testing when Gemini free tier quota exhausts quickly.
-# The system auto-failovers to this endpoint if Gemini returns 429.
-# KAGGLE_LLM_URL=https://your-ngrok-tunnel.ngrok-free.dev/v1/chat/completions
+```bash
+docker compose up -d --build
 ```
 
-### Frontend (`frontend/.env.local`)
+## Repository structure
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+```text
+backend/
+  main.py                    FastAPI application entrypoint and CORS setup
+  agents/
+    orchestrator.py          Parallel + sequential DAG pipeline coordinator
+    llm/                     8-provider registry, adapters, JSON repair and BYOK lock
+    prompts/                 System and user prompt templates per agent
+    profile_agent.py         Candidate CV structuring agent (A1)
+    market_agent.py          Serper.dev search + Pakistani market synthesis agent (A2)
+    gap_agent.py             Readiness & Target JD gap analysis agent (A3)
+    roadmap_agent.py         30/60/90-day free learning roadmap agent (A4)
+    cv_rewrite_agent.py      ATS bullet rewrite & outreach agent (A5)
+    interview_agent.py       Configurable multi-mode mock interviewer (A6)
+  routers/                   Pipeline, interview, PDF dossier export and BYOK key routes
+  tools/                     PyMuPDF CV parser, Serper client and ReportLab PDF builder
+  db/                        Supabase client, 48h market cache and SQL schema
+  test_v2_byok.py            Deterministic backend regression suite
+frontend/
+  app/                       Next.js 16 App Router pages (Home, Dashboard, Interview, Resume, Dossier, About)
+  components/                Manuscript Ledger UI components, BYOK studio and visual charts
+  lib/                       API client, SSE consumer and useSyncExternalStore BYOK state
+  public/images/team/        Locally cached GitHub avatars for team attribution
+docs/                        Deployment, BYOK security, Supabase, verification and licensing guides
 ```
 
+## Documentation
 
----
+| Guide | Coverage |
+| --- | --- |
+| [Deployment](docs/DEPLOYMENT.md) | Ubuntu 24.04 VPS setup, `systemd`, Caddy HTTPS, Docker Compose and Vercel frontend hosting |
+| [LLM providers and BYOK](docs/PROVIDERS_AND_BYOK.md) | Server-default lock invariant, 8 allowlisted providers, custom model IDs, JSON self-repair and redaction |
+| [Supabase setup](docs/SUPABASE_SETUP.md) | SQL bootstrap, optional `quota_tracker`, JSONB schema compatibility and 48-hour market cache |
+| [Verification](docs/VERIFICATION.md) | Recorded 3 November 2026 test evidence, reproduction commands and evaluation boundaries |
+| [Frontend](frontend/README.md) | Next.js 16 / React 19 routes, environment variables, browser BYOK state and scripts |
+| [Contributing](CONTRIBUTING.md) | Local development standards, security invariants and pull-request checks |
+| [Licensing](docs/LICENSING.md) | Apache 2.0 scope, attribution, third-party service terms and team avatar sources |
 
-## 📡 API Reference
+## Team
 
-> 🔑 **BYOK Header Note**: Attach `X-LLM-Provider`, `X-LLM-Model`, and `X-LLM-API-Key` (or legacy `X-Gemini-API-Key`) headers on `/api/keys/validate`, `/api/pipeline/start`, `/api/interview/start/{session_id}`, and `/api/interview/answer` to run with your own provider and model. When no `X-LLM-API-Key` is provided, Ustaad strictly locks execution to the free server default (`gemini` / `gemini-3.1-flash-lite`).
+Ustaad is built and maintained by **AgenticEra Systems** in Karachi, Pakistan. Individual commit history remains in Git.
 
-### Key & Validation Endpoints
+| Profile image | Team member | Team focus | Profiles |
+| --- | --- | --- | --- |
+| <img src="frontend/public/images/team/muhammad-hassan12.jpg" width="64" height="64" alt="Syed Muhammad Hassan’s GitHub avatar"> | Syed Muhammad Hassan | Backend architecture, multi-agent orchestration & BYOK engine | [GitHub](https://github.com/Muhammad-Hassan12) · [LinkedIn](https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/) · [Portfolio](https://www.smhassan.me/) |
+| <img src="frontend/public/images/team/abdulmannan991.png" width="64" height="64" alt="Abdul Mannan Fazlani’s GitHub avatar"> | Abdul Mannan Fazlani | Frontend engineering, Manuscript Ledger UI/UX & interactive workspace | [GitHub](https://github.com/abdulmannan991) · [LinkedIn](https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/) |
 
-| Method | Endpoint | Description | Header (Optional) |
-|---|---|---|---|
-| `GET` | `/health` | Backend health check | None |
-| `GET` | `/api/keys/providers` | Catalog of supported BYOK providers, regions, and preset models | None |
-| `GET` / `POST` | `/api/keys/validate` | Validate BYOK provider key & model (or server default status) | `X-LLM-*` / `X-Gemini-API-Key` |
+Profile images are locally stored snapshots of the corresponding GitHub avatars; sources and separate rights are documented in the [licensing guide](docs/LICENSING.md#team-profile-images).
 
-### Pipeline Endpoints
+## License
 
-| Method | Endpoint | Description | Header (Optional) |
-|---|---|---|---|
-| `POST` | `/api/pipeline/start` | Upload CV (multipart form + optional `job_description`) + start parallel DAG pipeline. Returns `{ session_id }` | `X-LLM-*` |
-| `GET` | `/api/pipeline/status/{session_id}` | SSE stream of real-time pipeline events (`agent_start`, `agent_complete`, `pipeline_complete`, `error`) with DB polling fallback | None |
-| `GET` | `/api/pipeline/results/{session_id}` | Full JSON session data for a completed (or in-progress) session | None |
-| `GET` | `/api/pipeline/quota-status` | Remaining daily shared server quota status | None |
+Ustaad's original software and written documentation are licensed under the **[Apache License 2.0](LICENSE)**. See [NOTICE](NOTICE) for attribution and the [licensing guide](docs/LICENSING.md) for scope and redistribution details.
 
-### Interview Endpoints
-
-| Method | Endpoint | Description | Header (Optional) |
-|---|---|---|---|
-| `GET` | `/api/interview/active/{session_id}` | Check for an active or completed interview session (0 LLM calls) | None |
-| `POST` | `/api/interview/start/{session_id}` | Start or resume a tailored interview (`sprint_5`, `technical`, `behavioral_hr`, `full_15`) | `X-LLM-*` |
-| `POST` | `/api/interview/answer` | Submit an answer. Body: `{ session_id, interview_id, question_id, answer }`. Returns content + communication rubric evaluation | `X-LLM-*` |
-| `POST` | `/api/interview/finish/{interview_id}` | Finish an active interview early and compute final percentage score | None |
-| `GET` | `/api/interview/summary/{session_id}` | Retrieve full interview session data (questions, answers, scores, final score) | None |
-
-### Export Endpoints
-
-| Method | Endpoint | Description | Header (Optional) |
-|---|---|---|---|
-| `GET` | `/api/export/dossier/{session_id}` | Download Career Dossier as a styled PDF | None |
-
----
-
-## 🤝 Contributing & Code of Conduct
-
-We welcome contributions! Please review our [Contributing Guidelines](CONTRIBUTING.md) to understand our workflow, from forking the repository to submitting a Pull Request. 
-
-To ensure a welcoming and inclusive community for everyone, all participants must adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
-
----
-
-## 🔮 Future Roadmap
-
-**Portfolio & GitHub Audit Agent** — An 8th agent that reviews a candidate's actual GitHub repos and projects — commit consistency, README quality, and which projects are worth featuring. Pakistani employers increasingly screen on demonstrated work over transcripts, and right now Ustaad optimizes the CV but says nothing about the proof of work behind it.
-
-**Communication Coaching Layer** — An extension to the Interview Agent that scores clarity, structure, and confidence in spoken/typed answers, not just technical correctness. Pakistan's own tech industry body (P@SHA) ranks communication and adaptability as what actually gets candidates hired and promoted, above raw technical skill.
-
-**Employer-Side Mode** — Since the Market Intelligence Agent already tracks what Pakistani companies are hiring for in real time, the natural next step is a lightweight recruiter dashboard: companies post a role, and get a ranked shortlist of opted-in candidates whose gap profile matches. This turns Ustaad from a one-sided tool into a two-sided marketplace.
-
-**Smaller additions planned:**
-- Urdu language support across the full pipeline
-- Voice-based mock interview mode
-- Direct job application tracking per session
-- Multi-provider LLM support (OpenAI, Claude, local models via Ollama)
-
----
-
-## 👥 The Team
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/Muhammad-Hassan12.png" width="80" style="border-radius:50%"/><br/>
-      <b>Syed Muhammad Hassan</b><br/>
-      <sub>Frontend & Backend Architecture & AI Agent Pipeline</sub><br/>
-      <a href="https://github.com/Muhammad-Hassan12">GitHub</a> •
-      <a href="https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/">LinkedIn</a>
-    </td>
-    <td align="center">
-      <img src="https://github.com/abdulmannan991.png" width="80" style="border-radius:50%"/><br/>
-      <b>Abdul Mannan Fazlani</b><br/>
-      <sub>Frontend Engineering & UI/UX Design</sub><br/>
-      <a href="https://github.com/abdulmannan991">GitHub</a> •
-      <a href="https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/">LinkedIn</a>
-    </td>
-  </tr>
-</table>
-
-**Organization**: [AgenticEra Systems](https://github.com/AgenticEraSystems) — AI automation for the real world.
-
----
-
-## 📄 License
-
-This project is licensed under the **Apache License 2.0**.
-
-```
-Apache License
-Version 2.0, January 2004
-http://www.apache.org/licenses/
-
-Copyright 2026 AgenticEra Systems
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
----
-
-<div align="center">
-
-Built with ❤️ in Karachi, Pakistan 🇵🇰 · Powered by Gemini 3.1 Flash Lite 🤖
-
-**[Try Ustaad](https://www.ustaad.systems)** · **[Kaggle Competition](https://www.kaggle.com/competitions/vibecoding-agents-capstone-project)**
-
-</div>
+Third-party libraries, external AI/search APIs, profile avatars and branding retain their separate terms. Uploaded CVs, pasted job descriptions and generated session records are private user data and are not part of the licensed software distribution.

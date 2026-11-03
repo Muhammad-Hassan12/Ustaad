@@ -46,18 +46,40 @@ export default function ApiKeyModal({
   onClose,
   onKeyUpdated,
 }: ApiKeyModalProps) {
-  const [providers, setProviders] = useState<ProviderSpec[]>(FALLBACK_PROVIDERS);
-  const [modeTab, setModeTab] = useState<"server_default" | "byok">("server_default");
-  const [selectedProvider, setSelectedProvider] = useState<LLMProviderId>("gemini");
-  const [profiles, setProfiles] = useState<Partial<Record<LLMProviderId, StoredProviderProfile>>>({});
+  if (!isOpen) return null;
+  return <ApiKeyModalContent onClose={onClose} onKeyUpdated={onKeyUpdated} />;
+}
 
-  const [keyInput, setKeyInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState<string>(SERVER_DEFAULT_MODEL);
-  const [customModelId, setCustomModelId] = useState("");
-  const [region, setRegion] = useState<"intl" | "cn">("intl");
+function ApiKeyModalContent({
+  onClose,
+  onKeyUpdated,
+}: Omit<ApiKeyModalProps, "isOpen">) {
+  const [initialStored] = useState<BYOKStorageState>(() => loadBYOKState());
+  const initialSpec =
+    FALLBACK_PROVIDERS.find((p) => p.id === initialStored.activeProvider) ||
+    FALLBACK_PROVIDERS[0];
+  const initialProf = initialStored.profiles[initialStored.activeProvider];
+
+  const [providers, setProviders] = useState<ProviderSpec[]>(FALLBACK_PROVIDERS);
+  const [modeTab, setModeTab] = useState<"server_default" | "byok">(initialStored.mode);
+  const [selectedProvider, setSelectedProvider] = useState<LLMProviderId>(
+    initialStored.activeProvider
+  );
+  const [profiles, setProfiles] = useState<
+    Partial<Record<LLMProviderId, StoredProviderProfile>>
+  >(initialStored.profiles);
+
+  const [keyInput, setKeyInput] = useState(initialProf?.apiKey || "");
+  const [selectedModel, setSelectedModel] = useState<string>(
+    initialProf?.selectedModel || initialSpec.default_model || SERVER_DEFAULT_MODEL
+  );
+  const [customModelId, setCustomModelId] = useState(initialProf?.customModelId || "");
+  const [region, setRegion] = useState<"intl" | "cn">(
+    initialProf?.region || (initialStored.activeProvider === "glm" ? "cn" : "intl")
+  );
 
   const [showKey, setShowKey] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [statusResult, setStatusResult] = useState<KeyValidationResult | null>(null);
   const [quotaInfo, setQuotaInfo] = useState<{
     remaining: number;
@@ -85,17 +107,7 @@ export default function ApiKeyModal({
   };
 
   useEffect(() => {
-    if (!isOpen || typeof window === "undefined") return;
-
-    const stored = loadBYOKState();
-    setModeTab(stored.mode);
-    setSelectedProvider(stored.activeProvider);
-    setProfiles(stored.profiles);
-    hydrateProviderFields(stored.activeProvider, stored.profiles, providers);
-
-    setStatusResult(null);
-    setErrorMsg(null);
-    setLoading(true);
+    let cancelled = false;
 
     Promise.all([
       getProvidersCatalog().catch(() => null),
@@ -103,18 +115,26 @@ export default function ApiKeyModal({
       getQuotaStatus().catch(() => null),
     ])
       .then(([catRes, valRes, qRes]) => {
+        if (cancelled) return;
         if (catRes && catRes.providers?.length) {
           setProviders(catRes.providers);
-          hydrateProviderFields(stored.activeProvider, stored.profiles, catRes.providers);
+          hydrateProviderFields(
+            initialStored.activeProvider,
+            initialStored.profiles,
+            catRes.providers
+          );
         }
         if (valRes) setStatusResult(valRes);
         if (qRes) setQuotaInfo(qRes);
       })
-      .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  if (!isOpen) return null;
+    return () => {
+      cancelled = true;
+    };
+  }, [initialStored]);
 
   const currentSpec =
     providers.find((p) => p.id === selectedProvider) ||

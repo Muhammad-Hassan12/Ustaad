@@ -123,29 +123,53 @@ export default function DashboardPage() {
     }
   };
 
-  const refreshResults = useCallback(async () => {
-    try {
-      const data = await getPipelineResults(sessionId);
+  const applyPipelineData = useCallback(
+    (data: SessionData | null) => {
       if (data && !data.error) {
         setSessionData(data);
         if (data.status) {
-          setStatus(data.status);
+          setStatus(
+            data.status as "pending" | "running" | "complete" | "error"
+          );
           if (data.status === "complete" && !sessionSavedRef.current) {
             sessionSavedRef.current = true;
             saveToRecentSessions(data.target_role, data.target_city);
           }
         }
-        if (data.agents_completed) setCompletedAgents(data.agents_completed);
-        if (data.current_agent !== undefined) setCurrentAgent(data.current_agent);
-        if (data.error_message) setErrorMessage(data.error_message);
+        if (Array.isArray(data.agents_completed)) {
+          setCompletedAgents(data.agents_completed as string[]);
+        }
+        if (data.current_agent !== undefined) {
+          setCurrentAgent((data.current_agent as string | null) ?? null);
+        }
+        if (data.error_message) {
+          setErrorMessage(String(data.error_message));
+        }
       }
+    },
+    [saveToRecentSessions]
+  );
+
+  const refreshResults = useCallback(async () => {
+    try {
+      const data = await getPipelineResults(sessionId);
+      applyPipelineData(data);
     } catch (err) {
       console.error("Failed to load results:", err);
     }
-  }, [sessionId, saveToRecentSessions]);
+  }, [sessionId, applyPipelineData]);
 
   useEffect(() => {
-    refreshResults();
+    let cancelled = false;
+    getPipelineResults(sessionId)
+      .then((data) => {
+        if (!cancelled) {
+          applyPipelineData(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load results:", err);
+      });
 
     const unsubscribe = subscribeToPipeline(
       sessionId,
@@ -183,8 +207,11 @@ export default function DashboardPage() {
       }
     );
 
-    return () => unsubscribe();
-  }, [sessionId, refreshResults]);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [sessionId, applyPipelineData, refreshResults]);
 
   const readinessScore = sessionData?.gap_data?.overall_readiness_score;
   const atsScore = sessionData?.cv_rewrite_data?.ats_score_estimate;

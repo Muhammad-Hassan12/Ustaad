@@ -1,4 +1,7 @@
-import fitz  # PyMuPDF
+try:
+    import pymupdf as fitz  # PyMuPDF 2.x+
+except ImportError:
+    import fitz  # PyMuPDF 1.x fallback
 
 
 class CVParseError(Exception):

@@ -22,6 +22,9 @@ from agents.llm.config import (
 from agents.llm.registry import PROVIDER_REGISTRY
 from agents.llm.client import call_llm_json, parse_llm_json, redact_secrets
 from agents.gemini_utils import parse_gemini_json
+from agents.interview_agent import DIFFICULTY_LABELS, INTERVIEW_MODES
+from routers.interview import _flatten_questions
+from tools.cv_parser import extract_cv_text
 from tools.pdf_generator import generate_career_dossier
 
 
@@ -194,6 +197,25 @@ class TestUstaadV2Sync(unittest.TestCase):
         self.assertTrue(pdf.startswith(b"%PDF-"))
         self.assertGreater(len(pdf), 2000)
 
+        # Round-trip PDF extraction through PyMuPDF
+        extracted = extract_cv_text(pdf)
+        self.assertIn("Backend & AI Engineer", extracted)
+        self.assertIn("Lahore", extracted)
+
+    def test_interview_modes_and_question_flattening(self):
+        self.assertEqual(set(INTERVIEW_MODES.keys()), {"sprint_5", "technical", "behavioral_hr", "full_15"})
+        self.assertEqual(set(DIFFICULTY_LABELS.keys()), {"fresh_grad", "junior", "mid_senior"})
+        flat = _flatten_questions(
+            {
+                "technical_questions": [{"id": "t1", "question": "Explain ASGI"}],
+                "behavioral_questions": [{"id": "b1", "question": "Describe a conflict"}],
+                "hr_questions": [{"id": "h1", "question": "Salary expectation"}],
+            }
+        )
+        self.assertEqual(len(flat), 3)
+        self.assertEqual([q["category"] for q in flat], ["Technical", "Behavioral", "HR / Fit"])
+
 
 if __name__ == "__main__":
     unittest.main()
+

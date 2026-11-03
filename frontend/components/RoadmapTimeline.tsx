@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import {
   Map,
   Zap,
@@ -51,44 +51,75 @@ interface RoadmapTimelineProps {
   baseReadinessScore?: number;
 }
 
+const EMPTY_COMPLETED: Record<string, boolean> = {};
+const ROADMAP_PROGRESS_EVENT = "ustaad-roadmap-progress";
+const progressSnapshotCache: Record<
+  string,
+  { raw: string | null; parsed: Record<string, boolean> }
+> = {};
+
+function subscribeRoadmapProgress(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(ROADMAP_PROGRESS_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(ROADMAP_PROGRESS_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getRoadmapProgressSnapshot(storageKey: string): Record<string, boolean> {
+  if (typeof window === "undefined") return EMPTY_COMPLETED;
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(storageKey);
+  } catch {
+    return EMPTY_COMPLETED;
+  }
+  const cached = progressSnapshotCache[storageKey];
+  if (cached && cached.raw === raw) {
+    return cached.parsed;
+  }
+  let parsed: Record<string, boolean> = EMPTY_COMPLETED;
+  if (raw) {
+    try {
+      const candidate = JSON.parse(raw);
+      if (candidate && typeof candidate === "object") {
+        parsed = candidate as Record<string, boolean>;
+      }
+    } catch {
+      parsed = EMPTY_COMPLETED;
+    }
+  }
+  progressSnapshotCache[storageKey] = { raw, parsed };
+  return parsed;
+}
+
 export default function RoadmapTimeline({
   data,
   sessionId,
   baseReadinessScore,
 }: RoadmapTimelineProps) {
   const [activeTab, setActiveTab] = useState<"30" | "60" | "90">("30");
-  const [completedKeys, setCompletedKeys] = useState<Record<string, boolean>>({});
 
   const storageKey = `ustaad_roadmap_progress_${sessionId || "default"}`;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") {
-          setCompletedKeys(parsed);
-        }
-      }
-    } catch {
-      // Ignore malformed storage
-    }
-  }, [storageKey]);
+  const completedKeys = useSyncExternalStore(
+    subscribeRoadmapProgress,
+    () => getRoadmapProgressSnapshot(storageKey),
+    () => EMPTY_COMPLETED
+  );
 
   const toggleItem = (key: string) => {
-    setCompletedKeys((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      if (!next[key]) delete next[key];
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(next));
-        } catch {
-          // Ignore storage quota errors
-        }
-      }
-      return next;
-    });
+    if (typeof window === "undefined") return;
+    const next = { ...completedKeys, [key]: !completedKeys[key] };
+    if (!next[key]) delete next[key];
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      window.dispatchEvent(new Event(ROADMAP_PROGRESS_EVENT));
+    } catch {
+      // Ignore storage quota errors
+    }
   };
 
   const progressStats = useMemo(() => {
@@ -136,27 +167,23 @@ export default function RoadmapTimeline({
       ? data.sixty_day_plan
       : data.ninety_day_plan;
 
-  let foundFirstIncomplete = false;
-  const checkpoints: LedgerCheckpoint[] = (currentPlan || []).map((week, wIdx) => {
+  const weekCompletion = (currentPlan || []).map((week, wIdx) => {
     const tasks = week.tasks || [];
     const doneInWeek = tasks.filter(
       (_, tIdx) => completedKeys[`${activeTab}-w${wIdx}-t${tIdx}`]
     ).length;
     const isAllDone = tasks.length > 0 && doneInWeek === tasks.length;
-
-    let status: "complete" | "active" | "pending" = "pending";
-    if (isAllDone) {
-      status = "complete";
-    } else if (!foundFirstIncomplete) {
-      status = "active";
-      foundFirstIncomplete = true;
-    }
-
-    return {
-      label: `Week ${week.week}: ${week.focus} (${doneInWeek}/${tasks.length})`,
-      status,
-    };
+    return { week, tasks, doneInWeek, isAllDone };
   });
+  const firstIncompleteIdx = weekCompletion.findIndex((item) => !item.isAllDone);
+  const checkpoints: LedgerCheckpoint[] = weekCompletion.map((item, wIdx) => ({
+    label: `Week ${item.week.week}: ${item.week.focus} (${item.doneInWeek}/${item.tasks.length})`,
+    status: item.isAllDone
+      ? "complete"
+      : wIdx === firstIncompleteIdx
+      ? "active"
+      : "pending",
+  }));
 
   const hasBaseScore = typeof baseReadinessScore === "number";
   const projectedScore = hasBaseScore

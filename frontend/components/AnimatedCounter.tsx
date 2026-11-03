@@ -27,13 +27,8 @@ export default function AnimatedCounter({
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (!isInView || hasAnimated.current) return;
+    if (!isInView || hasAnimated.current || prefersReducedMotion) return;
     hasAnimated.current = true;
-
-    if (prefersReducedMotion) {
-      setDisplayValue(value);
-      return;
-    }
 
     const startTime = performance.now();
     const durationMs = duration * 1000;
@@ -54,9 +49,10 @@ export default function AnimatedCounter({
     requestAnimationFrame(animate);
   }, [isInView, value, duration, prefersReducedMotion]);
 
+  const effectiveValue = prefersReducedMotion ? value : displayValue;
   const formatted = decimals > 0
-    ? displayValue.toFixed(decimals)
-    : Math.round(displayValue).toLocaleString();
+    ? effectiveValue.toFixed(decimals)
+    : Math.round(effectiveValue).toLocaleString();
 
   return (
     <span ref={ref} className={className}>

@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+
 export type LLMProviderId =
   | "gemini"
   | "openai"
@@ -317,4 +319,48 @@ export function getActiveBYOKConfig(
     region: profile?.region,
   };
 }
+
+let cachedByokSnapshotKey: string | null = null;
+let cachedByokConfig: ActiveBYOKConfig | null = null;
+
+function subscribeToBYOK(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  window.addEventListener(BYOK_UPDATED_EVENT, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    window.removeEventListener(BYOK_UPDATED_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function getBYOKSnapshot(): ActiveBYOKConfig | null {
+  if (typeof window === "undefined") return null;
+  let rawKey = "";
+  try {
+    rawKey = `${localStorage.getItem(STORAGE_KEY) ?? ""}|${localStorage.getItem(LEGACY_GEMINI_KEY) ?? ""}`;
+  } catch {
+    return null;
+  }
+  if (rawKey === cachedByokSnapshotKey) {
+    return cachedByokConfig;
+  }
+  cachedByokSnapshotKey = rawKey;
+  cachedByokConfig = getActiveBYOKConfig();
+  return cachedByokConfig;
+}
+
+function getServerBYOKSnapshot(): ActiveBYOKConfig | null {
+  return null;
+}
+
+export function useActiveBYOKConfig(): ActiveBYOKConfig | null {
+  return useSyncExternalStore(
+    subscribeToBYOK,
+    getBYOKSnapshot,
+    getServerBYOKSnapshot
+  );
+}
+
 

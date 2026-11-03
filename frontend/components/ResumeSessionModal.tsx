@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, History, ArrowRight, Clock, Trash2 } from "lucide-react";
 
@@ -16,28 +16,31 @@ interface ResumeSessionModalProps {
   onClose: () => void;
 }
 
+function readStoredRecentSessions(): RecentSession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem("ustaad_recent_sessions");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return parsed as RecentSession[];
+    }
+  } catch (err) {
+    console.error("Failed to parse recent sessions:", err);
+  }
+  return [];
+}
+
 export default function ResumeSessionModal({ isOpen, onClose }: ResumeSessionModalProps) {
+  if (!isOpen) return null;
+  return <ResumeSessionModalContent onClose={onClose} />;
+}
+
+function ResumeSessionModalContent({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [sessionIdInput, setSessionIdInput] = useState("");
-  const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
+  const [recentSessions, setRecentSessions] = useState<RecentSession[]>(readStoredRecentSessions);
+  const [now] = useState(() => Date.now());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen && typeof window !== "undefined") {
-      setSessionIdInput("");
-      setErrorMsg(null);
-      try {
-        const stored = localStorage.getItem("ustaad_recent_sessions");
-        if (stored) {
-          setRecentSessions(JSON.parse(stored));
-        }
-      } catch (err) {
-        console.error("Failed to parse recent sessions:", err);
-      }
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const handleLoadSession = (e?: React.FormEvent, targetId?: string) => {
     if (e) e.preventDefault();
@@ -64,7 +67,7 @@ export default function ResumeSessionModal({ isOpen, onClose }: ResumeSessionMod
   };
 
   const formatRelativeTime = (timestamp: number) => {
-    const diff = Math.floor((Date.now() - timestamp) / 1000);
+    const diff = Math.floor((now - timestamp) / 1000);
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;

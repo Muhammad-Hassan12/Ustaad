@@ -8,6 +8,7 @@
 venv/
 .venv/
 env/
+.runtime/
 
 # Python bytecode & cache
 __pycache__/

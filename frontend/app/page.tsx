@@ -10,10 +10,8 @@ import { startPipeline } from "@/lib/api";
 import ApiKeyModal from "@/components/ApiKeyModal";
 import ResumeSessionModal from "@/components/ResumeSessionModal";
 import {
-  ActiveBYOKConfig,
-  BYOK_UPDATED_EVENT,
-  getActiveBYOKConfig,
   SERVER_DEFAULT_MODEL,
+  useActiveBYOKConfig,
 } from "@/lib/llmConfig";
 import {
   ArrowRight,
@@ -76,19 +74,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
-  const [activeByok, setActiveByok] = useState<ActiveBYOKConfig | null>(null);
-
-  const checkKeyStatus = () => {
-    if (typeof window !== "undefined") {
-      setActiveByok(getActiveBYOKConfig());
-    }
-  };
+  const activeByok = useActiveBYOKConfig();
 
   useEffect(() => {
-    checkKeyStatus();
-    window.addEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
-    window.addEventListener("storage", checkKeyStatus);
-
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -96,8 +84,6 @@ export default function Home() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      window.removeEventListener(BYOK_UPDATED_EVENT, checkKeyStatus);
-      window.removeEventListener("storage", checkKeyStatus);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
@@ -583,7 +569,6 @@ export default function Home() {
       <ApiKeyModal
         isOpen={isKeyModalOpen}
         onClose={() => setIsKeyModalOpen(false)}
-        onKeyUpdated={checkKeyStatus}
       />
 
       <ResumeSessionModal

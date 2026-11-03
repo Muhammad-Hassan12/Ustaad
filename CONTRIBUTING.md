@@ -1,61 +1,44 @@
 # Contributing to Ustaad
 
-First off, thank you for considering contributing to Ustaad! It's people like you that make Ustaad such a great tool for Pakistani tech talent.
+Contributions that improve career analysis quality, Pakistani job-market grounding, provider resilience, accessibility or documentation are welcome.
 
-## How can I contribute?
+## Reporting issues and proposing changes
 
-### 1. Reporting Bugs
-This section guides you through submitting a bug report.
-- Check the issues to see if the bug has already been reported.
-- If not, open a new issue. Include a clear and descriptive title.
-- Describe the exact steps which reproduce the problem in as many details as possible.
+- Search existing GitHub issues before opening a duplicate report.
+- For bug reports, include reproduction steps, HTTP status codes or sanitized console output, browser/OS details and whether the session used **Free Server Default** or **BYOK** (specify provider and model ID, never an API key).
+- For architectural changes—such as adding new pipeline stages, database columns or LLM adapters—open an issue first to align on scope and resource constraints.
 
-### 2. Suggesting Enhancements
-- Open an issue detailing the enhancement.
-- Explain why this enhancement would be useful to most users.
-- You can refer to the **Future Roadmap** section in the `README.md` for ideas on what we are currently planning.
+## Local environment requirements
 
-### 3. Pull Requests
-1. Fork the repository and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+- **Backend:** Python `3.12` (`backend/requirements-dev.txt`).
+- **Frontend:** Node.js `22` (`frontend/.nvmrc`, Next.js `16.4.4`, React `19.3.1`, Tailwind CSS `v4`).
+- **Services:** A Supabase project configured with [`backend/db/schemas.sql`](backend/db/schemas.sql), a Google Gemini API key and a Serper.dev API key in `backend/.env`.
 
-## Project Setup
+See the [project README](README.md#installation) for step-by-step setup instructions.
 
-Please refer to the `README.md` for instructions on how to set up the project locally. 
+## Engineering standards
 
-- The backend is a **FastAPI** application requiring Python 3.10+.
-- The frontend is a **Next.js 14** application requiring Node.js 18+.
-- You will need API keys for Gemini, Serper.dev, and a Supabase project.
+1. **Preserve the server-default lock:** Requests without a caller-supplied API key must always resolve to `gemini` / `gemini-3.1-flash-lite` in `backend/agents/llm/config.py`. Never allow unauthenticated headers to select alternate providers or models on the server's key.
+2. **Never log or persist user keys:** Any new adapter, router or error handler must pass user-facing failure strings through `redact_secrets()` and keep caller credentials strictly in request memory.
+3. **Maintain backward-compatible JSONB state:** Additive fields inside `profile_data`, `market_data`, `gap_data`, `roadmap_data` and `cv_rewrite_data` must degrade gracefully when loading older sessions.
+4. **Keep dependencies lean:** Ustaad is designed to run on low-cost student infrastructure without heavy local ML runtimes, Redis clusters or paid background queues.
 
-## Code Style
+## Verification before opening a pull request
 
-### Python (Backend)
-- We follow standard PEP-8 guidelines.
-- Please format your code using [Black](https://github.com/psf/black) or [Ruff](https://astral.sh/ruff).
-- Ensure all functions include type hints.
+Run both backend and frontend checks locally and ensure zero errors:
 
-### TypeScript/React (Frontend)
-- We use ESLint and Prettier for code formatting. Run `npm run lint` before submitting a PR.
-- Ensure strict TypeScript typing where applicable.
-
-## Testing
-
-Before submitting a PR, make sure you test your changes.
-
-**Backend Tests:**
-Navigate to the `backend` directory and run the test suite using pytest:
 ```bash
+# Backend regression suite
 cd backend
-pytest
+pytest -q --tb=short
+
+# Frontend TypeScript, ESLint 9 and production build checks
+cd ../frontend
+npm run typecheck
+npm run lint
+npm run build
 ```
 
-If you add a new agent or modify the pipeline, please add corresponding tests.
+## License
 
-## Questions?
-If you have any questions, feel free to open an issue or start a discussion.
-
-Thank you for contributing!
+By submitting a contribution, you agree that your contribution will be licensed under the [Apache License, Version 2.0](LICENSE).

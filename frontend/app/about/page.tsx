@@ -155,16 +155,16 @@ const CONCEPTS = [
 ];
 
 const TECH_STACK = [
-  { icon: Sparkles, name: "Gemini 3.1 Flash Lite", category: "AI Orchestration" },
-  { icon: Zap, name: "FastAPI", category: "Backend Engine" },
-  { icon: Globe, name: "Next.js 14", category: "Frontend Framework" },
-  { icon: Database, name: "Supabase", category: "Database & Storage" },
+  { icon: Sparkles, name: "Gemini 3.1 Flash Lite", category: "Default AI Engine" },
+  { icon: Key, name: "8-Provider BYOK", category: "Multi-LLM Studio" },
+  { icon: Zap, name: "FastAPI", category: "Async Backend" },
+  { icon: Globe, name: "Next.js 16 & React 19", category: "Frontend Framework" },
+  { icon: Database, name: "Supabase", category: "PostgreSQL State" },
   { icon: Search, name: "Serper.dev", category: "Live Search API" },
   { icon: FileText, name: "PyMuPDF", category: "PDF Parsing" },
-  { icon: BookOpen, name: "ReportLab", category: "PDF Generation" },
-  { icon: Palette, name: "Tailwind CSS", category: "Manuscript Styling" },
-  { icon: Sparkles, name: "Framer Motion", category: "Animations" },
-  { icon: GitBranch, name: "TypeScript", category: "Type Safety" },
+  { icon: BookOpen, name: "ReportLab", category: "Dossier Export" },
+  { icon: Palette, name: "Tailwind CSS v4", category: "Manuscript Styling" },
+  { icon: GitBranch, name: "TypeScript 5", category: "Strict Typing" },
 ];
 
 const AGENTS_CHECKPOINTS: LedgerCheckpoint[] = AGENTS.map((a) => ({
@@ -507,10 +507,11 @@ export default function AboutPage() {
 
             <div>
               <Image
-                src="https://avatars.githubusercontent.com/Muhammad-Hassan12"
+                src="/images/team/muhammad-hassan12.jpg"
                 alt="Syed Muhammad Hassan"
                 width={56}
                 height={56}
+                unoptimized
                 className="w-14 h-14 rounded-full shadow-md border-2 border-brass object-cover"
               />
               <h3 className="font-display text-2xl text-ink mt-4">Syed Muhammad Hassan</h3>
@@ -558,10 +559,11 @@ export default function AboutPage() {
 
             <div>
               <Image
-                src="https://avatars.githubusercontent.com/abdulmannan991"
+                src="/images/team/abdulmannan991.png"
                 alt="Abdul Mannan Fazlani"
                 width={56}
                 height={56}
+                unoptimized
                 className="w-14 h-14 rounded-full shadow-md border-2 border-teal object-cover"
               />
               <h3 className="font-display text-2xl text-ink mt-4">Abdul Mannan Fazlani</h3>

@@ -1,10 +1,11 @@
 """
 Backward-compatible shim preserving original gemini_utils symbols while delegating
-to Ustaad's unified Multi-Provider LLM layer (agents.llm).
+to Ustaad's unified Multi-Provider LLM layer (agents.llm) without requiring the
+deprecated google-generativeai gRPC SDK.
 """
+from dataclasses import dataclass
 import os
-import google.generativeai as genai
-import google.generativeai.client as _genai_client
+from typing import Optional
 from dotenv import load_dotenv
 
 from agents.llm.client import (
@@ -22,31 +23,52 @@ parse_gemini_json = parse_llm_json
 call_kaggle_qwen = call_kaggle_fallback
 
 
-def get_model(system_instruction: str, model_name: str = None, api_key: str = None) -> genai.GenerativeModel:
+@dataclass
+class LegacyModelDescriptor:
+    model_name: str
+    system_instruction: str
+    api_key: Optional[str] = None
+
+
+def get_model(
+    system_instruction: str,
+    model_name: Optional[str] = None,
+    api_key: Optional[str] = None,
+) -> LegacyModelDescriptor:
     """Legacy helper retained for backward compatibility with standalone scripts."""
-    resolved_key = api_key or os.getenv("GEMINI_API_KEY")
-    model = genai.GenerativeModel(
+    return LegacyModelDescriptor(
         model_name=model_name or DEFAULT_MODEL,
         system_instruction=system_instruction,
-        generation_config=genai.GenerationConfig(
-            response_mime_type="application/json",
-            temperature=0.7,
-        ),
+        api_key=api_key or os.getenv("GEMINI_API_KEY"),
     )
-    isolated_manager = _genai_client._ClientManager()
-    isolated_manager.configure(api_key=resolved_key)
-    model._async_client = isolated_manager.make_client("generative_async")
-    model._client = isolated_manager.make_client("generative")
-    return model
 
 
-async def call_gemini(model: genai.GenerativeModel, prompt: str, max_retries: int = 8) -> str:
+async def call_gemini(
+    model: LegacyModelDescriptor, prompt: str, max_retries: int = 8
+) -> str:
     sys_inst = getattr(model, "system_instruction", "") or ""
-    cfg = LLMConfig(provider="gemini", model=DEFAULT_MODEL, api_key=os.getenv("GEMINI_API_KEY"), is_byok=False)
+    model_id = getattr(model, "model_name", DEFAULT_MODEL) or DEFAULT_MODEL
+    key = getattr(model, "api_key", None) or os.getenv("GEMINI_API_KEY")
+    cfg = LLMConfig(
+        provider="gemini",
+        model=model_id,
+        api_key=key,
+        is_byok=bool(getattr(model, "api_key", None)),
+    )
     return await call_llm(str(sys_inst), prompt, llm_config=cfg, max_retries=max_retries)
 
 
-async def call_gemini_json(model: genai.GenerativeModel, prompt: str, max_retries: int = 8) -> dict:
+async def call_gemini_json(
+    model: LegacyModelDescriptor, prompt: str, max_retries: int = 8
+) -> dict:
     sys_inst = getattr(model, "system_instruction", "") or ""
-    cfg = resolve_llm_config_from_values()
+    key = getattr(model, "api_key", None)
+    if key:
+        cfg = resolve_llm_config_from_values(
+            x_gemini_api_key=key,
+            x_llm_provider="gemini",
+            x_llm_model=getattr(model, "model_name", None),
+        )
+    else:
+        cfg = resolve_llm_config_from_values()
     return await call_llm_json(str(sys_inst), prompt, llm_config=cfg)
