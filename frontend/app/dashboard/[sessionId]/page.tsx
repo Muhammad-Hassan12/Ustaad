@@ -7,8 +7,9 @@ import MarketSnapshot from "@/components/MarketSnapshot";
 import GapReport from "@/components/GapReport";
 import RoadmapTimeline from "@/components/RoadmapTimeline";
 import CVComparison from "@/components/CVComparison";
+import ProofOfWorkCard from "@/components/ProofOfWorkCard";
 import { subscribeToPipeline } from "@/lib/sse";
-import { getPipelineResults, getDossierUrl } from "@/lib/api";
+import { getPipelineResults, getDossierUrl, reauditPipeline } from "@/lib/api";
 import {
   MessageSquare,
   Download,
@@ -21,6 +22,9 @@ import {
   BookOpen,
   User,
   Cpu,
+  TrendingUp,
+  FileUp,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -53,6 +57,17 @@ interface SessionData {
       model?: string;
       mode?: string;
     };
+    proof_of_work?: Parameters<typeof ProofOfWorkCard>[0]["data"];
+    reaudit_delta?: {
+      baseline_session_id?: string;
+      previous_readiness_score?: number | null;
+      new_readiness_score?: number | null;
+      readiness_delta?: number | null;
+      previous_ats_score?: number | null;
+      new_ats_score?: number | null;
+      ats_delta?: number | null;
+      resolved_gaps?: string[];
+    };
   };
   market_data?: Parameters<typeof MarketSnapshot>[0]["data"] & {
     cache_hit?: boolean;
@@ -65,6 +80,14 @@ interface SessionData {
 }
 
 type WorkspaceTab = "all" | "overview" | "market" | "cv" | "roadmap";
+
+const CORE_PIPELINE_AGENTS = new Set([
+  "profile",
+  "market",
+  "gap",
+  "roadmap",
+  "cv_rewrite",
+]);
 
 function formatEducation(edu: EducationObj | string | null | undefined): string | null {
   if (!edu) return null;
@@ -91,6 +114,38 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("all");
   const [copied, setCopied] = useState(false);
   const sessionSavedRef = useRef(false);
+
+  // Re-audit modal state
+  const [isReauditOpen, setIsReauditOpen] = useState(false);
+  const [reauditFile, setReauditFile] = useState<File | null>(null);
+  const [reauditLoading, setReauditLoading] = useState(false);
+  const [reauditError, setReauditError] = useState<string | null>(null);
+  const reauditInputRef = useRef<HTMLInputElement>(null);
+
+  const handleReauditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reauditFile) {
+      setReauditError("Please select a revised PDF CV.");
+      return;
+    }
+    setReauditLoading(true);
+    setReauditError(null);
+    try {
+      const formData = new FormData();
+      formData.append("cv_file", reauditFile);
+      const res = await reauditPipeline(sessionId, formData);
+      if (res && res.session_id) {
+        setIsReauditOpen(false);
+        router.push(`/dashboard/${res.session_id}`);
+      } else {
+        setReauditError(res?.detail || res?.error || "Failed to launch re-audit.");
+      }
+    } catch (err: unknown) {
+      setReauditError(err instanceof Error ? err.message : "Error contacting re-audit endpoint.");
+    } finally {
+      setReauditLoading(false);
+    }
+  };
 
   const saveToRecentSessions = useCallback(
     (role?: string, city?: string) => {
@@ -137,7 +192,11 @@ export default function DashboardPage() {
           }
         }
         if (Array.isArray(data.agents_completed)) {
-          setCompletedAgents(data.agents_completed as string[]);
+          setCompletedAgents(
+            (data.agents_completed as string[]).filter((ag) =>
+              CORE_PIPELINE_AGENTS.has(ag)
+            )
+          );
         }
         if (data.current_agent !== undefined) {
           setCurrentAgent((data.current_agent as string | null) ?? null);
@@ -185,9 +244,11 @@ export default function DashboardPage() {
           if (event.agent) {
             const finished = event.agent;
             setActiveAgents((prev) => prev.filter((a) => a !== finished));
-            setCompletedAgents((prev) =>
-              prev.includes(finished) ? prev : [...prev, finished]
-            );
+            if (CORE_PIPELINE_AGENTS.has(finished)) {
+              setCompletedAgents((prev) =>
+                prev.includes(finished) ? prev : [...prev, finished]
+              );
+            }
           }
           refreshResults();
         } else if (event.event === "pipeline_complete") {
@@ -219,6 +280,7 @@ export default function DashboardPage() {
   const demandLevel = sessionData?.market_data?.market_demand_level;
   const salaryRange = sessionData?.market_data?.salary_range_pkr;
   const analyzedWith = sessionData?.profile_data?.analyzed_with;
+  const reauditDelta = sessionData?.profile_data?.reaudit_delta;
   const educationLine = formatEducation(sessionData?.profile_data?.education);
   const candidateSkills =
     sessionData?.profile_data?.current_skills ||
@@ -257,6 +319,9 @@ export default function DashboardPage() {
     (activeTab === "all" || activeTab === "overview") &&
     completedAgents.includes("profile") &&
     sessionData?.profile_data;
+  const showPow =
+    (activeTab === "all" || activeTab === "overview") &&
+    Boolean(sessionData?.profile_data?.proof_of_work);
   const showGap =
     (activeTab === "all" || activeTab === "overview") &&
     completedAgents.includes("gap") &&
@@ -310,6 +375,87 @@ export default function DashboardPage() {
               {analyzedWith.provider?.toUpperCase()} · {analyzedWith.model}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Re-Audit Delta Comparison Strip */}
+      {reauditDelta && (
+        <div className="mb-6 bg-parchment text-ink border border-brass/50 rounded-sm p-4 sm:p-5 relative shadow-md paper-grain flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink/15 pb-2.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-teal" />
+              <span className="font-mono text-xs uppercase tracking-wider font-bold text-ink">
+                CV Revision Score Delta
+              </span>
+            </div>
+            {reauditDelta.baseline_session_id && (
+              <button
+                type="button"
+                onClick={() => router.push(`/dashboard/${reauditDelta.baseline_session_id}`)}
+                className="font-mono text-[11px] text-teal hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>← Compare with Baseline Session</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+            <div className="p-2.5 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-0.5">
+              <span className="text-[10px] text-ink/60 uppercase">Readiness Score</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold text-ink">
+                  {reauditDelta.new_readiness_score ?? "—"}
+                </span>
+                {typeof reauditDelta.readiness_delta === "number" && (
+                  <span
+                    className={`text-xs font-bold ${
+                      reauditDelta.readiness_delta >= 0 ? "text-teal" : "text-critical-red"
+                    }`}
+                  >
+                    {reauditDelta.readiness_delta >= 0 ? `+${reauditDelta.readiness_delta}` : reauditDelta.readiness_delta}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-0.5">
+              <span className="text-[10px] text-ink/60 uppercase">ATS Resume Score</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold text-ink">
+                  {reauditDelta.new_ats_score ?? "—"}
+                </span>
+                {typeof reauditDelta.ats_delta === "number" && (
+                  <span
+                    className={`text-xs font-bold ${
+                      reauditDelta.ats_delta >= 0 ? "text-teal" : "text-critical-red"
+                    }`}
+                  >
+                    {reauditDelta.ats_delta >= 0 ? `+${reauditDelta.ats_delta}` : reauditDelta.ats_delta}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-sm bg-ink/5 border border-ink/10 flex flex-col gap-0.5 col-span-2">
+              <span className="text-[10px] text-ink/60 uppercase">Resolved Critical Gaps</span>
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                {reauditDelta.resolved_gaps && reauditDelta.resolved_gaps.length > 0 ? (
+                  reauditDelta.resolved_gaps.map((gap, i) => (
+                    <span
+                      key={i}
+                      className="text-[10px] bg-teal/15 text-teal border border-teal/30 px-1.5 py-0.5 rounded-sm font-semibold"
+                    >
+                      ✓ {gap}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-ink/60 font-body">
+                    No previously flagged critical gaps were fully resolved yet.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -436,6 +582,14 @@ export default function DashboardPage() {
                   <Download size={14} /> Dossier PDF
                 </button>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsReauditOpen(true)}
+                className="w-full py-3 px-4 rounded-sm bg-parchment/10 border border-brass/50 text-brass hover:bg-brass/15 font-body font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer text-xs"
+              >
+                <FileUp size={15} /> Upload Revised CV & Re-Audit
+              </button>
 
               {/* Copy Session ID Card */}
               <div className="bg-parchment text-ink rounded-sm border border-brass/40 p-4 flex flex-col gap-2.5 shadow-md relative paper-grain mt-1">
@@ -577,6 +731,17 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
+          {/* Proof-of-Work Technical Audit (GitHub & Portfolio) */}
+          {showPow && sessionData?.profile_data?.proof_of_work && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+            >
+              <ProofOfWorkCard data={sessionData.profile_data.proof_of_work} />
+            </motion.div>
+          )}
+
           {/* Gap Analysis */}
           {showGap && sessionData?.gap_data && (
             <motion.div
@@ -625,11 +790,129 @@ export default function DashboardPage() {
                 data={sessionData.roadmap_data}
                 sessionId={sessionId}
                 baseReadinessScore={readinessScore}
+                targetRole={sessionData.target_role}
               />
             </motion.div>
           )}
         </div>
       </div>
+
+      {/* Re-Audit Modal */}
+      {isReauditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-parchment text-ink rounded-sm border border-brass/50 p-6 sm:p-7 max-w-lg w-full relative shadow-2xl paper-grain flex flex-col gap-5"
+          >
+            {/* Editorial corner accents */}
+            <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-brass z-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-brass z-10 pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
+
+            <div className="flex items-center justify-between border-b border-ink/15 pb-3">
+              <div className="flex items-center gap-2">
+                <FileUp size={18} className="text-teal" />
+                <h3 className="font-display text-xl text-ink font-bold">
+                  Re-Audit Updated CV
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReauditOpen(false);
+                  setReauditFile(null);
+                  setReauditError(null);
+                }}
+                className="text-ink/60 hover:text-ink cursor-pointer p-1"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="font-body text-xs text-ink/75 leading-relaxed">
+              Upload your updated PDF CV to compare your new readiness and ATS match scores against this baseline session. Re-uses cached Pakistani market intel with <strong>0 extra search calls</strong>.
+            </p>
+
+            <form onSubmit={handleReauditSubmit} className="flex flex-col gap-4">
+              <div
+                onClick={() => reauditInputRef.current?.click()}
+                className="border-2 border-dashed border-ink/30 hover:border-brass rounded-sm p-6 text-center cursor-pointer transition-colors bg-ink/[0.02]"
+              >
+                <input
+                  ref={reauditInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      setReauditFile(f);
+                      setReauditError(null);
+                    }
+                  }}
+                />
+                <div className="flex flex-col items-center gap-2">
+                  <FileUp size={24} className="text-brass" />
+                  {reauditFile ? (
+                    <span className="font-mono text-xs font-bold text-ink">
+                      {reauditFile.name} ({(reauditFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  ) : (
+                    <>
+                      <span className="font-body text-xs font-semibold text-ink">
+                        Click or drag to select revised CV (PDF)
+                      </span>
+                      <span className="font-mono text-[10px] text-ink/50">
+                        Maximum file size: 5 MB
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {reauditError && (
+                <div className="p-3 rounded-sm bg-critical-red/10 border-l-4 border-critical-red text-critical-red text-xs font-body">
+                  {reauditError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={reauditLoading}
+                  onClick={() => {
+                    setIsReauditOpen(false);
+                    setReauditFile(null);
+                    setReauditError(null);
+                  }}
+                  className="font-mono text-xs text-ink/60 hover:text-ink cursor-pointer px-3 py-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reauditLoading || !reauditFile}
+                  className="bg-brass text-ink font-mono text-xs font-bold px-5 py-2.5 rounded-sm hover:bg-brass/90 disabled:opacity-50 transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  {reauditLoading ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Launching Re-Audit...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Compare Score Delta</span>
+                      <TrendingUp size={13} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </main>
   );
 }

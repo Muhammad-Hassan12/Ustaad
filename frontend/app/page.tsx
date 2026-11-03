@@ -9,6 +9,7 @@ import AnimatedSection, { StaggerChild } from "@/components/AnimatedSection";
 import { startPipeline } from "@/lib/api";
 import ApiKeyModal from "@/components/ApiKeyModal";
 import ResumeSessionModal from "@/components/ResumeSessionModal";
+import { GithubIcon } from "@/components/ProofOfWorkCard";
 import {
   SERVER_DEFAULT_MODEL,
   useActiveBYOKConfig,
@@ -31,6 +32,7 @@ import {
   Globe,
   FileText,
   Cpu,
+  Code2,
 } from "lucide-react";
 
 const DEFAULT_CITIES = [
@@ -70,6 +72,9 @@ export default function Home() {
   const [educationLevel, setEducationLevel] = useState("Bachelor's");
   const [showJdInput, setShowJdInput] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
+  const [showPowInput, setShowPowInput] = useState(false);
+  const [githubUsername, setGithubUsername] = useState("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
@@ -121,6 +126,12 @@ export default function Home() {
       formData.append("education_level", educationLevel);
       if (jobDescription.trim()) {
         formData.append("job_description", jobDescription.trim());
+      }
+      if (githubUsername.trim()) {
+        formData.append("github_username", githubUsername.trim());
+      }
+      if (portfolioUrl.trim()) {
+        formData.append("portfolio_url", portfolioUrl.trim());
       }
 
       const res = await startPipeline(formData);
@@ -389,6 +400,60 @@ export default function Home() {
                       <span className="font-mono text-[10px] text-ink/50 text-right">
                         {jobDescription.length}/8000 chars · Zero extra API calls
                       </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Optional Proof-of-Work Drawer */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowPowInput(!showPowInput)}
+                    className="w-full flex items-center justify-between text-left px-3 py-2 rounded-sm border border-ink/15 bg-ink/[0.03] hover:border-brass/50 transition-colors cursor-pointer"
+                  >
+                    <span className="font-mono text-[11px] font-semibold text-ink/80 flex items-center gap-1.5">
+                      <Code2 size={13} className="text-teal" />
+                      {githubUsername.trim() || portfolioUrl.trim()
+                        ? "Proof-of-Work Links Added ✓"
+                        : "Audit GitHub & Portfolio Proof-of-Work (Optional)"}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`text-ink/60 transition-transform ${showPowInput ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {showPowInput && (
+                    <div className="mt-2 p-3 rounded-sm border border-ink/20 bg-ink/[0.02] flex flex-col gap-3">
+                      <p className="font-body text-[11px] text-ink/70 leading-relaxed">
+                        Ustaad will inspect your GitHub repos (recency, demo links, language breakdown) and portfolio health (HTTPS, OpenGraph cards, CTA). If left empty, Ustaad auto-detects links directly from your uploaded CV.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col gap-1">
+                          <label className="font-mono text-[11px] text-ink/80 flex items-center gap-1">
+                            <GithubIcon size={12} className="text-teal" /> GitHub Username or URL
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. torvalds or https://github.com/..."
+                            value={githubUsername}
+                            onChange={(e) => setGithubUsername(e.target.value)}
+                            className="w-full bg-transparent border-b border-ink/25 pb-1 font-mono text-xs text-ink focus:border-brass focus:outline-none placeholder:text-ink/40"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="font-mono text-[11px] text-ink/80 flex items-center gap-1">
+                            <Globe size={12} className="text-teal" /> Portfolio Website URL
+                          </label>
+                          <input
+                            type="url"
+                            placeholder="e.g. https://myportfolio.dev"
+                            value={portfolioUrl}
+                            onChange={(e) => setPortfolioUrl(e.target.value)}
+                            className="w-full bg-transparent border-b border-ink/25 pb-1 font-mono text-xs text-ink focus:border-brass focus:outline-none placeholder:text-ink/40"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

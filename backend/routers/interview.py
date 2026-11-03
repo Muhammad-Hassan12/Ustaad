@@ -29,6 +29,14 @@ class AnswerPayload(BaseModel):
     answer: str
 
 
+class ProbePayload(BaseModel):
+    session_id: str
+    interview_id: str
+    parent_question_id: str
+    probe_question: str
+    answer: str
+
+
 def _flatten_questions(questions_data: dict) -> list[dict]:
     if not isinstance(questions_data, dict):
         return []
@@ -182,6 +190,8 @@ async def submit_answer(
     interview = await asyncio.to_thread(_get_interview_by_id_sync, payload.interview_id)
     if not interview:
         raise HTTPException(status_code=404, detail="Interview session not found.")
+    if interview.get("session_id") != payload.session_id:
+        raise HTTPException(status_code=400, detail="Interview session does not match session_id.")
 
     questions_data = interview.get("questions") or {}
     all_questions = _flatten_questions(questions_data)
@@ -261,6 +271,80 @@ async def submit_answer(
         "question_number": next_index + 1 if not is_complete else None,
         "is_complete": is_complete,
         "final_score": final_score,
+    }
+
+
+@router.post("/probe")
+async def submit_probe(
+    payload: ProbePayload,
+    llm_config: LLMConfig = Depends(resolve_llm_config),
+):
+    if len(payload.answer) > MAX_ANSWER_LENGTH:
+        return {"error": f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters."}
+    if not payload.answer.strip():
+        return {"error": "Answer cannot be empty."}
+    if not payload.probe_question.strip():
+        return {"error": "Probe question cannot be empty."}
+
+    session = await get_session(payload.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    target_role = session.get("target_role", "")
+
+    interview = await asyncio.to_thread(_get_interview_by_id_sync, payload.interview_id)
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview session not found.")
+    if interview.get("session_id") != payload.session_id:
+        raise HTTPException(status_code=400, detail="Interview session does not match session_id.")
+
+    questions_data = interview.get("questions") or {}
+    all_questions = _flatten_questions(questions_data)
+    total_q = len(all_questions) if all_questions else 5
+    current_index = interview.get("current_question_index") or 1
+
+    try:
+        evaluation = await evaluate_answer(
+            target_role=target_role,
+            question=payload.probe_question,
+            what_looking_for="Technical depth, concrete architecture trade-offs, and STAR specificity addressing the follow-up probe.",
+            candidate_answer=payload.answer,
+            question_number=current_index,
+            total_questions=total_q,
+            llm_config=llm_config,
+        )
+    except Exception as e:
+        return {"error": redact_secrets(str(e), llm_config.api_key)}
+
+    # Attach probe to matching score without altering question progression or total counts
+    scores = list(interview.get("scores") or [])
+    probe_entry = {
+        "probe_question": payload.probe_question,
+        "probe_answer": payload.answer,
+        "probe_score": evaluation.get("score"),
+        "feedback_summary": evaluation.get("feedback_summary", ""),
+        "clarity_score": evaluation.get("clarity_and_structure_score"),
+        "what_was_good": evaluation.get("what_was_good", ""),
+        "what_was_missing": evaluation.get("what_was_missing", ""),
+    }
+
+    matched = False
+    for sc in reversed(scores):
+        if sc.get("question_id") == payload.parent_question_id:
+            sc["probe_evaluation"] = probe_entry
+            matched = True
+            break
+    if not matched and scores:
+        scores[-1]["probe_evaluation"] = probe_entry
+
+    await asyncio.to_thread(
+        _update_interview_sync,
+        payload.interview_id,
+        {"scores": scores},
+    )
+
+    return {
+        "evaluation": evaluation,
+        "parent_question_id": payload.parent_question_id,
     }
 
 

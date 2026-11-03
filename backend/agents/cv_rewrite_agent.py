@@ -19,10 +19,26 @@ async def run_cv_rewrite_agent(
         if clean_jd
         else ""
     )
+    pow_digest = (profile_data.get("proof_of_work") or {}).get("prompt_digest")
+    pow_section = (
+        f"\nVERIFIED PROOF-OF-WORK AUDIT (FEATURE ACTIVE PROJECTS/PORTFOLIO IN CV):\n{pow_digest}\n"
+        if pow_digest
+        else ""
+    )
+    combined_section = (
+        f"{jd_section}\n{pow_section}".strip()
+        if (jd_section or pow_section)
+        else ""
+    )
+    lean_profile = {
+        k: v
+        for k, v in (profile_data or {}).items()
+        if k not in ("target_job_description", "reaudit_delta", "proof_of_work")
+    }
     prompt = CV_REWRITE_USER_TEMPLATE.format(
-        candidate_profile=json.dumps(profile_data, indent=2),
+        candidate_profile=json.dumps(lean_profile, indent=2),
         market_data=json.dumps(market_data, indent=2),
         gap_data=json.dumps(gap_data, indent=2),
-        jd_section=jd_section,
+        jd_section=combined_section,
     )
     return await call_llm_json(CV_REWRITE_SYSTEM_PROMPT, prompt, llm_config=cfg)

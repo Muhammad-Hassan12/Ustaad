@@ -25,10 +25,28 @@ async def run_gap_agent(
         jd_score_example = "null"
         jd_keywords_example = "[]"
 
+    pow_digest = (profile_data.get("proof_of_work") or {}).get("prompt_digest")
+    pow_section = (
+        f"\nVERIFIED PROOF-OF-WORK AUDIT (GITHUB & PORTFOLIO):\n{pow_digest}\n"
+        if pow_digest
+        else ""
+    )
+    combined_section = (
+        f"{jd_section}\n{pow_section}".strip()
+        if (jd_section or pow_section)
+        else ""
+    )
+
+    lean_profile = {
+        k: v
+        for k, v in (profile_data or {}).items()
+        if k not in ("target_job_description", "reaudit_delta", "proof_of_work")
+    }
+
     prompt = GAP_USER_TEMPLATE.format(
-        candidate_profile=json.dumps(profile_data, indent=2),
+        candidate_profile=json.dumps(lean_profile, indent=2),
         market_data=json.dumps(market_data, indent=2),
-        jd_section=jd_section,
+        jd_section=combined_section,
         jd_score_example=jd_score_example,
         jd_keywords_example=jd_keywords_example,
     )

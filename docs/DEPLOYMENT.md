@@ -52,7 +52,7 @@ SUPABASE_SERVICE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 CORS_ORIGINS=https://www.example.com,https://example.com
 ```
 
-`GEMINI_MODEL` remains locked to `gemini-3.1-flash-lite` for shared default requests. Keep `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` and `SERPER_API_KEY` exclusively on the backend host. Optional `KAGGLE_LLM_URL` may be configured if operating a secondary OpenAI-compatible failover endpoint for `429`/`503` responses on the default server key.
+`GEMINI_MODEL` remains locked to `gemini-3.1-flash-lite` for shared default requests. Keep `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` and `SERPER_API_KEY` exclusively on the backend host. Optional `KAGGLE_LLM_URL` may be configured if operating a secondary OpenAI-compatible failover endpoint for `429`/`503` responses on the default server key, and optional `GITHUB_TOKEN` (public-read scope) may be set to raise GitHub API rate limits during Proof-of-Work repository inspection.
 
 ## 4. Supervise FastAPI with systemd
 

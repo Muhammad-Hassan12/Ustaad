@@ -55,11 +55,20 @@ async def generate_interview_questions(
     diff_label = DIFFICULTY_LABELS.get(difficulty, DIFFICULTY_LABELS["junior"])
     total_count = mode_spec["tech"] + mode_spec["behav"] + mode_spec["hr"]
 
+    lean_profile = {
+        k: v
+        for k, v in (profile_data or {}).items()
+        if k not in ("target_job_description", "reaudit_delta", "proof_of_work")
+    }
+    pow_digest = ((profile_data or {}).get("proof_of_work") or {}).get("prompt_digest")
+    if pow_digest:
+        lean_profile["proof_of_work_summary"] = pow_digest
+
     prompt = QUESTION_GEN_USER_TEMPLATE.format(
         target_role=profile_data.get("target_role", ""),
         difficulty_label=diff_label,
         mode_description=mode_spec["label"],
-        candidate_profile=json.dumps(profile_data, indent=2),
+        candidate_profile=json.dumps(lean_profile, indent=2),
         market_data=json.dumps(market_data, indent=2),
         total_count=total_count,
         tech_count=mode_spec["tech"],

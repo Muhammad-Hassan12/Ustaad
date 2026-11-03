@@ -4,9 +4,9 @@ The Ustaad frontend provides the CV upload and Target Job Description intake, re
 
 ## Routes and views
 
-- **`/` (`app/page.tsx`):** Drag-and-drop PDF CV intake, Pakistani city selector, experience/education controls, optional Target Job Description tailoring input, recent-session history modal and BYOK status indicator.
-- **`/dashboard/[sessionId]` (`app/dashboard/[sessionId]/page.tsx`):** Live Server-Sent Events progress tracker (`Profile + Market` parallel stage → `Gap` → `Roadmap + CV Rewrite` parallel stage), KPI summary strip, tabbed workspace (`All`, `Overview & Gaps`, `Market`, `CV & Outreach`, `Roadmap`) and session-link sharing.
-- **`/interview/[sessionId]` (`app/interview/[sessionId]/page.tsx`):** Configurable Mock Interview 2.0 loop supporting four modes (`sprint_5`, `technical`, `behavioral_hr`, `full_15`), three difficulty tiers (`fresh_grad`, `junior`, `mid_senior`), word-count guidance, per-answer coaching + clarity scoring, early finish and full transcript review.
+- **`/` (`app/page.tsx`):** Drag-and-drop PDF CV intake, Pakistani city selector, experience/education controls, optional Target Job Description tailoring input, optional Proof-of-Work GitHub/portfolio inputs, recent-session history modal and BYOK status indicator.
+- **`/dashboard/[sessionId]` (`app/dashboard/[sessionId]/page.tsx`):** Live Server-Sent Events progress tracker, KPI summary strip, Proof-of-Work technical audit card, live Pakistani job matches, statutory PKR FBR net-take-home tax estimator, verified 30/60/90-day roadmap with RFC 5545 `.ics` calendar export, revised CV re-audit modal with score delta strip, and session-link sharing.
+- **`/interview/[sessionId]` (`app/interview/[sessionId]/page.tsx`):** Configurable Mock Interview 2.0 loop supporting four modes (`sprint_5`, `technical`, `behavioral_hr`, `full_15`), three difficulty tiers (`fresh_grad`, `junior`, `mid_senior`), word-count guidance, per-answer coaching + clarity scoring, adaptive interviewer drill-down follow-up probes, early finish and full transcript review.
 - **`/resume/[sessionId]` (`app/resume/[sessionId]/page.tsx`):** Single-column, standard-heading ATS resume preview synthesized from `profile_data` and `cv_rewrite_data`, styled with `@media print` A4 rules for browser `Save as PDF` export.
 - **`/dossier/[sessionId]` (`app/dossier/[sessionId]/page.tsx`):** Executive Career Dossier summary and one-click ReportLab PDF download.
 - **`/about` (`app/about/page.tsx`):** Multi-agent architecture overview, technology stack and locally cached team profile cards.
@@ -35,9 +35,11 @@ cp .env.example .env.local
 
 `NEXT_PUBLIC_API_URL` is embedded into client bundles at build time; rebuild after changing it. Never place `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY` or `SERPER_API_KEY` in `frontend/.env.local`.
 
-## Browser-only BYOK state
+## Browser-only BYOK state and client utilities
 
-User-supplied API keys and custom model selections are managed in `lib/llmConfig.ts` under `localStorage["ustaad_byok_v2"]` (automatically migrating legacy `localStorage["gemini_api_key"]` entries) and synchronized across components with React's `useSyncExternalStore`. When BYOK mode is active, `lib/api.ts` attaches `X-LLM-Provider`, `X-LLM-Model`, `X-LLM-API-Key` and optional `X-LLM-Region` headers on requests to the FastAPI backend. Switching back to **Free Server Default** omits user key headers while keeping saved provider profiles locally until explicitly cleared.
+- **`lib/llmConfig.ts` & `lib/api.ts`:** User-supplied API keys and custom model selections are stored under `localStorage["ustaad_byok_v2"]` (automatically migrating legacy `localStorage["gemini_api_key"]` entries) and synchronized across components with React's `useSyncExternalStore`. When BYOK mode is active, `lib/api.ts` attaches `X-LLM-Provider`, `X-LLM-Model`, `X-LLM-API-Key` and optional `X-LLM-Region` headers on requests to the FastAPI backend. Switching back to **Free Server Default** omits user key headers while keeping saved provider profiles locally until explicitly cleared.
+- **`lib/resourceLinks.ts`:** Resolves 30/60/90-day roadmap tasks against a curated directory of canonical free courses (CS50, Full Stack Open, Kaggle Learn, SQLBolt, NeetCode, FastAPI, React, Next.js, System Design Primer) with deterministic platform search fallbacks (`0` dead links and `0` Serper credits), and exports twice-weekly study blocks as an RFC 5545 `.ics` calendar file.
+- **`components/ProofOfWorkCard.tsx`:** Renders side-by-side GitHub activity metrics, standout repositories and 4-point personal portfolio health checks (HTTPS, OpenGraph tags, contact CTA, prerendered HTML vs. empty SPA shell).
 
 ## Development and production scripts
 

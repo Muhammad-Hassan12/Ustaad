@@ -10,8 +10,10 @@ import {
   CheckSquare,
   Square,
   TrendingUp,
+  Calendar,
 } from "lucide-react";
 import LedgerLine, { LedgerCheckpoint } from "./LedgerLine";
+import { resolveResourceUrl, downloadRoadmapICS } from "@/lib/resourceLinks";
 
 interface TaskDetail {
   task: string;
@@ -49,6 +51,7 @@ interface RoadmapTimelineProps {
   } | null;
   sessionId?: string;
   baseReadinessScore?: number;
+  targetRole?: string;
 }
 
 const EMPTY_COMPLETED: Record<string, boolean> = {};
@@ -99,6 +102,7 @@ export default function RoadmapTimeline({
   data,
   sessionId,
   baseReadinessScore,
+  targetRole,
 }: RoadmapTimelineProps) {
   const [activeTab, setActiveTab] = useState<"30" | "60" | "90">("30");
 
@@ -209,8 +213,18 @@ export default function RoadmapTimeline({
           </p>
         </div>
 
-        {/* Tab Row */}
-        <div className="flex gap-2 font-mono text-xs">
+        {/* Tab Row & Calendar Export */}
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <button
+            type="button"
+            onClick={() => downloadRoadmapICS(data, targetRole)}
+            className="px-3 py-2 rounded-sm border border-brass/40 bg-brass/10 hover:bg-brass hover:text-ink text-brass transition-colors cursor-pointer flex items-center gap-1.5 font-semibold"
+            title="Download .ics schedule for Google Calendar, Apple Calendar, or Outlook"
+          >
+            <Calendar size={13} />
+            <span>Export Schedule (.ics)</span>
+          </button>
+
           {(["30", "60", "90"] as const).map((tab) => (
             <button
               key={tab}
@@ -283,12 +297,21 @@ export default function RoadmapTimeline({
                 {week.tasks.map((task, tidx) => {
                   const itemKey = `${activeTab}-w${idx}-t${tidx}`;
                   const isChecked = !!completedKeys[itemKey];
+                  const linkInfo = resolveResourceUrl(task.resource, task.platform);
                   return (
-                    <button
-                      type="button"
+                    <div
+                      role="checkbox"
+                      aria-checked={isChecked}
+                      tabIndex={0}
                       key={`task-${activeTab}-${idx}-${tidx}`}
                       onClick={() => toggleItem(itemKey)}
-                      className={`p-3.5 rounded-sm border text-left flex items-center justify-between gap-4 transition-colors cursor-pointer ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggleItem(itemKey);
+                        }
+                      }}
+                      className={`p-3.5 rounded-sm border text-left flex items-center justify-between gap-4 transition-colors cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-brass ${
                         isChecked
                           ? "border-teal/40 bg-teal/10"
                           : "border-ink/15 bg-ink/[0.03] hover:border-brass/60"
@@ -308,16 +331,31 @@ export default function RoadmapTimeline({
                           >
                             {task.task}
                           </p>
-                          <p className="font-mono text-[11px] text-ink/60 flex items-center gap-1.5 mt-1">
-                            <ExternalLink size={10} />
-                            {task.resource} · {task.platform}
-                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <a
+                              href={linkInfo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 font-mono text-[11px] text-teal hover:text-brass underline underline-offset-2 transition-colors cursor-pointer"
+                              title={linkInfo.isDirect ? `Direct course: ${linkInfo.label}` : `Search on ${task.platform}`}
+                            >
+                              <ExternalLink size={10} className="shrink-0" />
+                              <span>{linkInfo.isDirect ? linkInfo.label : `${task.resource} · ${task.platform}`}</span>
+                            </a>
+                            {linkInfo.isDirect && (
+                              <span className="font-mono text-[9px] uppercase font-bold text-teal bg-teal/15 px-1.5 py-0.5 rounded-xs border border-teal/30">
+                                Verified Free
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <span className="font-mono text-xs text-brass font-semibold shrink-0 flex items-center gap-1 bg-ink/5 px-2.5 py-1 rounded-sm">
                         <Clock size={10} /> {task.estimated_hours}h
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -341,11 +379,19 @@ export default function RoadmapTimeline({
               const qwKey = `qw-${idx}`;
               const isChecked = !!completedKeys[qwKey];
               return (
-                <button
-                  type="button"
+                <div
+                  role="checkbox"
+                  aria-checked={isChecked}
+                  tabIndex={0}
                   key={qwKey}
                   onClick={() => toggleItem(qwKey)}
-                  className={`p-3.5 rounded-sm border text-left flex flex-col gap-1.5 transition-colors cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleItem(qwKey);
+                    }
+                  }}
+                  className={`p-3.5 rounded-sm border text-left flex flex-col gap-1.5 transition-colors cursor-pointer select-none focus:outline-none focus:ring-1 focus:ring-brass ${
                     isChecked
                       ? "border-teal/40 bg-teal/10"
                       : "border-brass/30 bg-brass/10 hover:border-brass"
@@ -371,7 +417,7 @@ export default function RoadmapTimeline({
                     </span>
                     <span className="font-semibold text-teal">Impact: {win.impact}</span>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

@@ -6,6 +6,7 @@ Automated regression suite for Ustaad 2.0:
 - Gemini / OpenAI-compat / Reasoning (<think>) / Anthropic adapters & 1-shot JSON self-repair
 - ReportLab PDF Career Dossier resilience against None/N/A salaries & XML characters
 """
+import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -156,6 +157,283 @@ class TestUstaadV2Async(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(res_ant["repaired"])
             self.assertEqual(mock_post.call_count, 2)
 
+    async def test_portfolio_inspector_html_parsing(self):
+        from tools.proof_of_work import inspect_portfolio_url
+        html_doc = """<!DOCTYPE html>
+        <html>
+          <head>
+            <title>Jane Doe | AI Systems Architect</title>
+            <meta name="description" content="Senior Software Engineer building scalable ML pipelines in Lahore.">
+            <meta property="og:title" content="Jane Doe Portfolio">
+            <meta property="og:image" content="https://janedoe.dev/og.png">
+          </head>
+          <body>
+            <h1>Selected Work & Case Studies</h1>
+            <p>Built high-throughput data processing platforms handling 10k RPS.</p>
+            <a href="mailto:jane@example.com">Contact Me</a>
+          </body>
+        </html>"""
+
+        with patch("tools.proof_of_work.validate_public_http_url", return_value="https://janedoe.dev"):
+            mock_resp = httpx.Response(
+                200,
+                text=html_doc,
+                headers={"content-type": "text/html; charset=utf-8"},
+                request=httpx.Request("GET", "https://janedoe.dev"),
+            )
+            with patch("httpx.AsyncClient.send", AsyncMock(return_value=mock_resp)):
+                audit = await inspect_portfolio_url("https://janedoe.dev")
+                self.assertEqual(audit["status"], "ok")
+                self.assertEqual(audit["title"], "Jane Doe | AI Systems Architect")
+                self.assertTrue(audit["uses_https"])
+                self.assertTrue(audit["has_open_graph"])
+                self.assertTrue(audit["has_contact_cta"])
+                self.assertFalse(audit["is_empty_spa_shell"])
+
+        # Empty client-side SPA shell detection
+        spa_doc = """<!DOCTYPE html>
+        <html>
+          <head><title>Vite + React</title></head>
+          <body><div id="root"></div><script src="/src/main.jsx"></script></body>
+        </html>"""
+        mock_spa_resp = httpx.Response(
+            200,
+            text=spa_doc,
+            headers={"content-type": "text/html; charset=utf-8"},
+            request=httpx.Request("GET", "https://janedoe.dev"),
+        )
+        with patch("tools.proof_of_work.validate_public_http_url", return_value="https://janedoe.dev"):
+            with patch("httpx.AsyncClient.send", AsyncMock(return_value=mock_spa_resp)):
+                audit_spa = await inspect_portfolio_url("https://janedoe.dev")
+                self.assertTrue(audit_spa["is_empty_spa_shell"])
+                self.assertFalse(audit_spa["has_contact_cta"])
+
+    async def test_interview_probe_endpoint(self):
+        client = TestClient(app)
+        mock_interview = {
+            "id": "mock_int_123",
+            "session_id": "mock_sess_123",
+            "current_question_index": 2,
+            "questions": {
+                "technical_questions": [{"id": "t1", "question": "Explain indexing."}],
+                "behavioral_questions": [{"id": "b1", "question": "Tell me about a bug."}],
+            },
+            "scores": [
+                {"question_id": "t1", "score": 6, "feedback_summary": "Surface level"}
+            ],
+        }
+        mock_session = {"target_role": "Backend Engineer"}
+        mock_eval = {
+            "score": 8,
+            "max_score": 10,
+            "clarity_and_structure_score": 8,
+            "what_was_good": "Deep explanation of B-Trees.",
+            "what_was_missing": "None",
+            "feedback_summary": "Much better technical depth.",
+        }
+
+        with patch("routers.interview.get_session", AsyncMock(return_value=mock_session)):
+            with patch("routers.interview._get_interview_by_id_sync", return_value=mock_interview):
+                with patch("routers.interview.evaluate_answer", AsyncMock(return_value=mock_eval)):
+                    with patch("routers.interview._update_interview_sync") as mock_update:
+                        resp = client.post(
+                            "/api/interview/probe",
+                            json={
+                                "session_id": "mock_sess_123",
+                                "interview_id": "mock_int_123",
+                                "parent_question_id": "t1",
+                                "probe_question": "Which index structure handles range queries best?",
+                                "answer": "B+ Trees handle range queries best due to linked leaf nodes.",
+                            },
+                        )
+                        self.assertEqual(resp.status_code, 200)
+                        data = resp.json()
+                        self.assertIn("evaluation", data)
+                        self.assertEqual(data["evaluation"]["score"], 8)
+                        self.assertEqual(data["parent_question_id"], "t1")
+
+                        mock_update.assert_called_once()
+                        updated_args = mock_update.call_args[0]
+                        self.assertEqual(updated_args[0], "mock_int_123")
+                        updated_scores = updated_args[1]["scores"]
+                        self.assertEqual(len(updated_scores), 1)
+                        self.assertIn("probe_evaluation", updated_scores[0])
+                        self.assertEqual(
+                            updated_scores[0]["probe_evaluation"]["probe_answer"],
+                            "B+ Trees handle range queries best due to linked leaf nodes.",
+                        )
+
+                        # Cross-session IDOR guard must reject mismatched session_id with 400
+                        bad_resp = client.post(
+                            "/api/interview/probe",
+                            json={
+                                "session_id": "different_session_999",
+                                "interview_id": "mock_int_123",
+                                "parent_question_id": "t1",
+                                "probe_question": "Which index structure handles range queries best?",
+                                "answer": "Attempted cross-session mutation.",
+                            },
+                        )
+                        self.assertEqual(bad_resp.status_code, 400)
+
+    async def test_github_inspector_handle_normalization_and_schema(self):
+        from tools.proof_of_work import inspect_github_profile
+
+        # Path traversal and reserved handles must be rejected with 0 network calls
+        for invalid_in in ["../../orgs/evil", "https://github.com/settings", "@-badhandle-"]:
+            res_bad = await inspect_github_profile(invalid_in)
+            self.assertEqual(res_bad["status"], "invalid_username")
+
+        # Full repo URL must extract owner handle ('torvalds'), not repo ('linux'), and align schema keys
+        user_json = {
+            "login": "torvalds",
+            "name": "Linus Torvalds",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1024025",
+            "html_url": "https://github.com/torvalds",
+            "public_repos": 7,
+            "followers": 200000,
+            "bio": "Creator of Linux and Git",
+            "blog": "",
+        }
+        repos_json = [
+            {
+                "name": "linux",
+                "fork": False,
+                "language": "C",
+                "description": "Linux kernel source tree",
+                "homepage": "https://www.kernel.org",
+                "stargazers_count": 180000,
+                "pushed_at": "2026-10-25T12:00:00Z",
+                "html_url": "https://github.com/torvalds/linux",
+            }
+        ]
+        mock_get = AsyncMock(
+            side_effect=[
+                _mock_response(200, user_json, "https://api.github.com/users/torvalds"),
+                _mock_response(200, repos_json, "https://api.github.com/users/torvalds/repos"),
+            ]
+        )
+        with patch("httpx.AsyncClient.get", new=mock_get):
+            gh = await inspect_github_profile("https://github.com/torvalds/linux?tab=readme")
+            self.assertEqual(gh["status"], "ok")
+            self.assertEqual(gh["username"], "torvalds")
+            self.assertEqual(gh["name"], "Linus Torvalds")
+            self.assertEqual(gh["profile_url"], "https://github.com/torvalds")
+            self.assertEqual(gh["html_url"], "https://github.com/torvalds")
+            self.assertEqual(len(gh["standout_repos"]), 1)
+            self.assertEqual(gh["standout_repos"][0]["url"], "https://github.com/torvalds/linux")
+            self.assertEqual(gh["standout_repos"][0]["html_url"], "https://github.com/torvalds/linux")
+            self.assertEqual(gh["standout_repos"][0]["homepage"], "https://www.kernel.org")
+
+    async def test_reaudit_endpoint_and_delta_calculation(self):
+        client = TestClient(app)
+        mock_baseline = {
+            "id": "base_sess_1",
+            "target_role": "Python Engineer",
+            "target_city": "Lahore",
+            "market_data": {"market_demand_level": "High", "salary_range_pkr": {"min": 200000, "max": 350000}},
+            "gap_data": {
+                "overall_readiness_score": 65,
+                "critical_gaps": [{"skill": "Docker", "priority": "Critical"}, {"skill": "Kubernetes", "priority": "Critical"}],
+            },
+            "cv_rewrite_data": {
+                "ats_score_estimate": 70,
+            },
+            "profile_data": {
+                "experience_years": 2.5,
+                "education": {"degree": "BS Software Engineering"},
+                "target_job_description": "Must know Docker, FastAPI, and PostgreSQL.",
+            },
+        }
+
+        # 404 test
+        with patch("routers.pipeline.get_session", AsyncMock(return_value=None)):
+            r404 = client.post(
+                "/api/pipeline/reaudit/nonexistent",
+                files={"cv_file": ("cv.pdf", b"%PDF-1.4 mock cv", "application/pdf")},
+            )
+            self.assertEqual(r404.status_code, 404)
+
+        # 200 reaudit launch test (with increment_daily_quota mocked for zero live DB calls)
+        with patch("routers.pipeline.get_session", AsyncMock(return_value=mock_baseline)):
+            with patch("routers.pipeline.create_session", AsyncMock(return_value="new_reaudit_sess")):
+                with patch("routers.pipeline.increment_daily_quota", AsyncMock()) as mock_quota:
+                    with patch("routers.pipeline.extract_cv_text", return_value="Updated CV with Docker mastery"):
+                        with patch("routers.pipeline.run_pipeline", AsyncMock()) as mock_run_pipe:
+                            resp = client.post(
+                                "/api/pipeline/reaudit/base_sess_1",
+                                files={"cv_file": ("cv.pdf", b"%PDF-1.4 updated cv", "application/pdf")},
+                            )
+                            self.assertEqual(resp.status_code, 200)
+                            data = resp.json()
+                            self.assertEqual(data["session_id"], "new_reaudit_sess")
+                            self.assertEqual(data["baseline_session_id"], "base_sess_1")
+                            mock_quota.assert_called_once()
+                            mock_run_pipe.assert_called_once()
+                            _, kwargs = mock_run_pipe.call_args
+                            self.assertEqual(
+                                kwargs["job_description"],
+                                "Must know Docker, FastAPI, and PostgreSQL.",
+                            )
+                            self.assertEqual(kwargs["pow_source"], "cv_extracted")
+
+    async def test_orchestrator_reaudit_skips_market_agent(self):
+        from agents.orchestrator import run_pipeline
+        mock_market_data = {"market_demand_level": "Very High", "demand_score": 90}
+        mock_profile_data = {"name": "Candidate", "experience_years": 3}
+        mock_gap_data = {
+            "overall_readiness_score": 85,
+            "critical_gaps": [{"skill": "Kubernetes"}],  # Docker resolved!
+        }
+        mock_roadmap_data = {"months": []}
+        mock_cv_data = {"ats_score_estimate": 88}
+
+        baseline_snapshot = {
+            "gap_data": {
+                "overall_readiness_score": 70,
+                "critical_gaps": [{"skill": "Docker"}, {"skill": "Kubernetes"}],
+            },
+            "cv_rewrite_data": {
+                "ats_score_estimate": 75,
+            },
+        }
+
+        q = asyncio.Queue()
+        with patch("agents.orchestrator.run_profile_agent", AsyncMock(return_value=mock_profile_data)):
+            with patch("agents.orchestrator.run_market_agent") as mock_market_agent:
+                with patch("agents.orchestrator.run_gap_agent", AsyncMock(return_value=mock_gap_data)):
+                    with patch("agents.orchestrator.run_roadmap_agent", AsyncMock(return_value=mock_roadmap_data)):
+                        with patch("agents.orchestrator.run_cv_rewrite_agent", AsyncMock(return_value=mock_cv_data)):
+                            with patch("agents.orchestrator.mark_agent_complete", AsyncMock()):
+                                with patch("agents.orchestrator.update_session", AsyncMock()) as mock_update_sess:
+                                    await run_pipeline(
+                                        session_id="reaudit_123",
+                                        cv_text="CV text",
+                                        target_role="DevOps Engineer",
+                                        target_city="Lahore",
+                                        experience_years=3.0,
+                                        education_level="Bachelor's",
+                                        status_queue=q,
+                                        preloaded_market_data=mock_market_data,
+                                        baseline_session_id="base_sess_1",
+                                        baseline_snapshot=baseline_snapshot,
+                                    )
+                                    # run_market_agent must NOT have been called!
+                                    mock_market_agent.assert_not_called()
+
+                                    # Check that update_session saved reaudit_delta
+                                    saved_profile = mock_update_sess.call_args[0][1]["profile_data"]
+                                    delta = saved_profile.get("reaudit_delta")
+                                    self.assertIsNotNone(delta)
+                                    self.assertEqual(delta["previous_readiness_score"], 70)
+                                    self.assertEqual(delta["new_readiness_score"], 85)
+                                    self.assertEqual(delta["readiness_delta"], 15.0)
+                                    self.assertEqual(delta["previous_ats_score"], 75)
+                                    self.assertEqual(delta["new_ats_score"], 88)
+                                    self.assertEqual(delta["ats_delta"], 13.0)
+                                    self.assertIn("Docker", delta["resolved_gaps"])
+                                    self.assertNotIn("Kubernetes", delta["resolved_gaps"])
+
 
 class TestUstaadV2Sync(unittest.TestCase):
     def test_secret_redaction_and_parsers(self):
@@ -214,6 +492,75 @@ class TestUstaadV2Sync(unittest.TestCase):
         )
         self.assertEqual(len(flat), 3)
         self.assertEqual([q["category"] for q in flat], ["Technical", "Behavioral", "HR / Fit"])
+
+    def test_verified_job_links_extraction(self):
+        from agents.market_agent import _extract_verified_job_links
+        raw = [
+            {
+                "query": "Python Developer jobs Karachi",
+                "results": [
+                    {"title": "Senior Python Engineer", "link": "https://www.rozee.pk/job/123", "snippet": "FastAPI & Django needed."},
+                    {"title": "Backend Dev", "link": "https://pk.linkedin.com/jobs/view/456", "snippet": "Systems Ltd looking for Python."},
+                    {"title": "Duplicate Link", "link": "https://www.rozee.pk/job/123/", "snippet": "Same job."},
+                    {"title": "Invalid Scheme", "link": "ftp://bad.com/job", "snippet": "Skip me."},
+                ]
+            }
+        ]
+        links = _extract_verified_job_links(raw)
+        self.assertEqual(len(links), 2)
+        self.assertEqual(links[0]["source"], "Rozee.pk")
+        self.assertEqual(links[0]["url"], "https://www.rozee.pk/job/123")
+        self.assertEqual(links[1]["source"], "LinkedIn")
+
+    def test_ssrf_url_guard(self):
+        import socket
+        from tools.proof_of_work import validate_public_http_url
+
+        public_addrinfo = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))]
+        with patch("socket.getaddrinfo", return_value=public_addrinfo):
+            self.assertTrue(validate_public_http_url("https://github.com/torvalds").startswith("https://github.com"))
+            self.assertTrue(validate_public_http_url("http://example.com").startswith("http://example.com"))
+
+        # Rejection of localhost, private IPs, metadata IPs, CGNAT, credentials, invalid schemes, custom ports
+        for blocked in [
+            "http://localhost:8000",
+            "http://127.0.0.1",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://192.168.1.1",
+            "http://100.64.0.1",
+            "https://user:pass@example.com",
+            "ftp://example.com/file.txt",
+            "https://example.com:8443",
+        ]:
+            with self.assertRaises(ValueError, msg=f"Expected SSRF block for {blocked}"):
+                validate_public_http_url(blocked)
+
+        mapped_ipv6 = [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("::ffff:127.0.0.1", 443, 0, 0))]
+        with patch("socket.getaddrinfo", return_value=mapped_ipv6):
+            with self.assertRaises(ValueError):
+                validate_public_http_url("https://rebind.example.com")
+
+    def test_cv_link_extraction(self):
+        from tools.cv_parser import extract_cv_links
+        sample_text = (
+            "John Doe\n"
+            "Full Stack Engineer\n"
+            "Check out my work at https://github.com/johndoe and my portfolio at https://johndoe.dev.\n"
+            "Connect with me on https://pk.linkedin.com/in/johndoe"
+        )
+        links = extract_cv_links(b"%PDF-1.4 mock", sample_text)
+        self.assertEqual(links["github_username"], "johndoe")
+        self.assertEqual(links["portfolio_url"], "https://johndoe.dev")
+        self.assertIn("https://github.com/johndoe", links["all_links"])
+
+        # Personal domains ending in x.com (e.g. alex.com) must NOT be blocked by x.com third-party filter
+        alex_links = extract_cv_links(b"", "Portfolio: https://alex.com | Social: https://x.com/alex")
+        self.assertEqual(alex_links["portfolio_url"], "https://alex.com")
+
+        # GitHub Pages (*.github.io) is a personal portfolio website, not a github.com/<user> handle
+        gh_pages = extract_cv_links(b"", "Site: https://johndoe.github.io and github.com/johndoe/app")
+        self.assertEqual(gh_pages["portfolio_url"], "https://johndoe.github.io")
+        self.assertEqual(gh_pages["github_username"], "johndoe")
 
 
 if __name__ == "__main__":

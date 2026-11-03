@@ -138,6 +138,15 @@ export async function startPipeline(formData: FormData) {
   return res.json();
 }
 
+export async function reauditPipeline(baselineSessionId: string, formData: FormData) {
+  const res = await fetch(`${API_URL}/api/pipeline/reaudit/${baselineSessionId}`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: formData,
+  });
+  return res.json();
+}
+
 export async function getPipelineResults(sessionId: string) {
   const res = await fetch(`${API_URL}/api/pipeline/results/${sessionId}`, {
     headers: getHeaders(),
@@ -177,6 +186,21 @@ export async function submitAnswer(payload: {
   answer: string;
 }) {
   const res = await fetch(`${API_URL}/api/interview/answer`, {
+    method: "POST",
+    headers: getHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function submitProbeAnswer(payload: {
+  session_id: string;
+  interview_id: string;
+  parent_question_id: string;
+  probe_question: string;
+  answer: string;
+}) {
+  const res = await fetch(`${API_URL}/api/interview/probe`, {
     method: "POST",
     headers: getHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),

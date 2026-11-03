@@ -77,6 +77,7 @@ Evaluate the answer. Return ONLY valid JSON:
   "what_was_missing": "string",
   "communication_coaching_tip": "string — 1 specific tip to improve structure/STAR delivery and confidence",
   "ideal_answer_hints": ["string — hint, not full answer"],
+  "follow_up_probe": "string or null — if score < 7 or the answer stayed surface-level without concrete architecture/STAR specifics, write ONE concise interviewer follow-up question; otherwise null",
   "feedback_summary": "string — 2-3 sentence overall feedback"
 }}
 """

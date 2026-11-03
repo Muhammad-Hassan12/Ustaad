@@ -7,6 +7,7 @@ import {
   getActiveInterview,
   startInterview,
   submitAnswer,
+  submitProbeAnswer,
 } from "@/lib/api";
 import {
   BYOK_UPDATED_EVENT,
@@ -54,6 +55,7 @@ interface Evaluation {
   what_was_missing: string;
   ideal_answer_hints: string[];
   feedback_summary: string;
+  follow_up_probe?: string | null;
 }
 
 interface ExistingInterviewInfo {
@@ -145,6 +147,14 @@ export default function InterviewPage() {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [finalScore, setFinalScore] = useState<number | null>(null);
+
+  // Follow-up probe drill-down state
+  const [lastEvaluatedQuestionId, setLastEvaluatedQuestionId] = useState<string | null>(null);
+  const [isDrillingDown, setIsDrillingDown] = useState(false);
+  const [probeAnswerText, setProbeAnswerText] = useState("");
+  const [submittedProbeAnswer, setSubmittedProbeAnswer] = useState("");
+  const [probeLoading, setProbeLoading] = useState(false);
+  const [probeEvaluation, setProbeEvaluation] = useState<Evaluation | null>(null);
 
   useEffect(() => {
     const syncModelBadge = () => {
@@ -257,7 +267,12 @@ export default function InterviewPage() {
 
       const data = await submitAnswer(payload);
       if (data && data.evaluation) {
+        setLastEvaluatedQuestionId(currentQuestion.id);
         setEvaluation(data.evaluation);
+        setIsDrillingDown(false);
+        setProbeAnswerText("");
+        setSubmittedProbeAnswer("");
+        setProbeEvaluation(null);
         setAnsweredCount((prev) => prev + 1);
         setIsComplete(!!data.is_complete);
         setFinalScore(data.final_score ?? null);
@@ -299,10 +314,56 @@ export default function InterviewPage() {
     }
   };
 
+  const handleProbeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !probeAnswerText.trim() ||
+      !interviewId ||
+      !lastEvaluatedQuestionId ||
+      !evaluation?.follow_up_probe
+    ) {
+      return;
+    }
+
+    setProbeLoading(true);
+    setError(null);
+    setSubmittedProbeAnswer(probeAnswerText);
+
+    try {
+      const payload = {
+        session_id: sessionId,
+        interview_id: interviewId,
+        parent_question_id: lastEvaluatedQuestionId,
+        probe_question: evaluation.follow_up_probe,
+        answer: probeAnswerText,
+      };
+
+      const data = await submitProbeAnswer(payload);
+      if (data && data.evaluation) {
+        setProbeEvaluation(data.evaluation);
+      } else {
+        setError(data?.error || data?.detail || "Error evaluating follow-up response.");
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Communication error evaluating follow-up response."
+      );
+    } finally {
+      setProbeLoading(false);
+    }
+  };
+
   const handleNextQuestion = () => {
     setAnswerText("");
     setSubmittedAnswerText("");
     setEvaluation(null);
+    setIsDrillingDown(false);
+    setProbeAnswerText("");
+    setSubmittedProbeAnswer("");
+    setProbeEvaluation(null);
+    setLastEvaluatedQuestionId(null);
     setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
@@ -881,6 +942,135 @@ export default function InterviewPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Adaptive Interviewer Follow-Up Probe ("Drill-Down Mode") */}
+            {evaluation.follow_up_probe && (
+              <div className="border border-brass/50 bg-brass/[0.06] rounded-sm p-5 flex flex-col gap-3.5 relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-brass/25 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-brass" />
+                    <span className="font-mono text-xs uppercase tracking-wider font-bold text-ink">
+                      Interviewer Follow-Up Probe (Adaptive Drill-Down)
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-brass bg-brass/15 border border-brass/30 px-2 py-0.5 rounded-sm">
+                    Optional Coaching Round
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="font-mono text-[11px] text-ink/60 uppercase">
+                    The interviewer wants deeper technical specificity:
+                  </span>
+                  <p className="font-body text-sm text-ink font-semibold italic border-l-2 border-brass pl-3 py-0.5">
+                    &ldquo;{evaluation.follow_up_probe}&rdquo;
+                  </p>
+                </div>
+
+                {/* State 1: Prompt user to practice or skip */}
+                {!isDrillingDown && !probeEvaluation && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <p className="font-body text-xs text-ink/75 max-w-md">
+                      Refine your answer with architectural trade-offs or concrete metrics to convert surface-level responses into hire-ready delivery.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsDrillingDown(true)}
+                        className="bg-brass text-ink font-mono text-xs font-semibold px-4 py-2 rounded-sm hover:bg-brass/90 transition-colors shadow-sm cursor-pointer"
+                      >
+                        Practice Follow-Up →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* State 2: Active input box for follow-up */}
+                {isDrillingDown && !probeEvaluation && (
+                  <form onSubmit={handleProbeSubmit} className="flex flex-col gap-3 pt-1">
+                    <div className="relative">
+                      <textarea
+                        rows={3}
+                        placeholder="Address the interviewer's specific probe here... (e.g., concrete data structures, concurrency handling, or measured latency improvements)"
+                        value={probeAnswerText}
+                        onChange={(e) => setProbeAnswerText(e.target.value)}
+                        className="w-full p-3 rounded-sm bg-parchment border border-brass/40 focus:border-brass focus:outline-none font-body text-xs text-ink leading-relaxed placeholder:text-ink/40 resize-none"
+                      />
+                      <span className="absolute bottom-2 right-2 font-mono text-[10px] text-ink/40">
+                        {probeAnswerText.length} chars
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsDrillingDown(false)}
+                        className="font-mono text-xs text-ink/60 hover:text-ink cursor-pointer"
+                      >
+                        Cancel follow-up
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={probeLoading || !probeAnswerText.trim()}
+                        className="bg-brass text-ink font-mono text-xs font-semibold px-4 py-2 rounded-sm hover:bg-brass/90 disabled:opacity-50 transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        {probeLoading ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin" />
+                            <span>Evaluating Probe...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Submit Follow-Up Response</span>
+                            <Send size={12} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* State 3: Probe Evaluation Result */}
+                {probeEvaluation && (
+                  <div className="p-4 rounded-sm bg-parchment/80 border border-brass/40 flex flex-col gap-3">
+                    <div className="flex items-center justify-between border-b border-ink/10 pb-2">
+                      <span className="font-mono text-xs font-bold text-ink uppercase tracking-wider">
+                        Follow-Up Coaching Assessment
+                      </span>
+                      <div className="flex items-baseline gap-1 font-mono">
+                        <span className="text-xl font-bold text-teal">{probeEvaluation.score}</span>
+                        <span className="text-xs text-ink/40">/ {probeEvaluation.max_score || 10}</span>
+                      </div>
+                    </div>
+
+                    {submittedProbeAnswer && (
+                      <p className="font-body text-xs text-ink/80 italic border-l-2 border-brass pl-2.5">
+                        &ldquo;{submittedProbeAnswer}&rdquo;
+                      </p>
+                    )}
+
+                    <p className="font-body text-xs text-ink/90 leading-relaxed">
+                      {probeEvaluation.feedback_summary}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      {probeEvaluation.what_was_good && (
+                        <div className="p-2 rounded-sm bg-teal/5 border border-teal/20 text-ink">
+                          <strong className="font-mono uppercase text-[10px] text-teal block">Refined Strength:</strong>
+                          <span className="font-body text-ink/85">{probeEvaluation.what_was_good}</span>
+                        </div>
+                      )}
+                      {probeEvaluation.what_was_missing && (
+                        <div className="p-2 rounded-sm bg-critical-red/5 border border-critical-red/20 text-critical-red">
+                          <strong className="font-mono uppercase text-[10px] text-critical-red block">Remaining Delta:</strong>
+                          <span className="font-body text-ink/85">{probeEvaluation.what_was_missing}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
