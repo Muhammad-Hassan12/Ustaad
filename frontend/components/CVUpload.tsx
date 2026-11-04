@@ -97,7 +97,7 @@ export default function CVUpload({ file, onFileChange, onError }: CVUploadProps)
                 )}
               </p>
               <p className="font-mono text-xs text-ink/60 mt-1">
-                Supports PDF format · Up to 5MB
+                Supports text-based PDF format · Up to 5MB (scanned image PDFs unsupported)
               </p>
               {errorMessage && (
                 <p className="font-mono text-xs text-rose-600 flex items-center justify-center gap-1 mt-2">

@@ -53,7 +53,8 @@ const AGENT_PREVIEWS = [
   { icon: Map, name: "Roadmap Agent", tag: "A4", desc: "Interactive 30/60/90-day plan" },
   { icon: FileSignature, name: "CV Rewrite Agent", tag: "A5", desc: "ATS bullets + referral outreach" },
   { icon: Mic, name: "Interview Agent", tag: "A6", desc: "Custom sprint & full mock loops" },
-  { icon: Download, name: "Export Studio", tag: "A7", desc: "PDF Dossier + Printable ATS CV" },
+  { icon: Code2, name: "Proof-of-Work", tag: "Audit", desc: "SSRF GitHub & portfolio crawler" },
+  { icon: Download, name: "Career Dossier", tag: "Export", desc: "ReportLab PDF & ATS resume engine" },
 ];
 
 export default function Home() {
@@ -165,13 +166,15 @@ export default function Home() {
               The career coach Pakistan never had.
             </p>
             <p className="font-body text-sm text-warm-gray mt-3 leading-relaxed">
-              Upload your CV, pick your target role, and Ustaad&apos;s parallel 7-agent pipeline delivers live Pakistani market salaries, an honest skill-gap &amp; JD match score, an interactive 30/60/90-day roadmap, a ready-to-export ATS CV rewrite, and custom AI mock interviews.
+              Upload your CV, pick your target role, and Ustaad&apos;s parallel multi-agent pipeline delivers live Pakistani market salaries, an honest skill-gap &amp; JD match score, an interactive 30/60/90-day roadmap, a ready-to-export ATS CV rewrite, and custom AI mock interviews.
             </p>
           </div>
 
           {/* Engineering Specs Strip (Quiet Mono Row) */}
           <p className="font-mono text-xs text-warm-gray/70 tracking-wide my-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span>7 parallel agents</span>
+            <span>6 specialized AI agents</span>
+            <span className="text-warm-gray/40 select-none">·</span>
+            <span>2 audit engines</span>
             <span className="text-warm-gray/40 select-none">·</span>
             <span>live Pakistani market data</span>
             <span className="text-warm-gray/40 select-none">·</span>
@@ -509,26 +512,35 @@ export default function Home() {
                   Resume Analysis →
                 </button>
               </p>
+
+              <div className="mt-3 pt-2.5 border-t border-ink/10 flex flex-col gap-0.5 text-center">
+                <p className="font-mono text-[10px] text-ink/55">
+                  Notice: Text-based PDF required (scanned image-only PDFs are unsupported).
+                </p>
+                <p className="font-mono text-[10px] text-ink/55">
+                  Career assessments and ATS scores are advisory heuristic estimates, not hiring guarantees.
+                </p>
+              </div>
             </div>
           </form>
         </div>
       </section>
 
-      {/* 2. Section: 7 AI Agents Preview Grid */}
+      {/* 2. Section: 6 AI Agents + 2 Utilities Preview Grid */}
       <AnimatedSection className="flex flex-col gap-8 border-t border-warm-gray/15 pt-16">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-xs text-brass uppercase tracking-widest">
             Behind the Scenes
           </span>
           <h2 className="font-display text-3xl md:text-4xl text-parchment">
-            7 Autonomous AI Agents Working For You
+            6 Specialized AI Agents · 2 Support Utilities
           </h2>
           <p className="font-body text-xs text-warm-gray max-w-2xl leading-relaxed">
-            From parallel CV &amp; market intelligence parsing to ATS resume generation and custom mock interviews — each specialized agent handles one critical pillar of your career strategy.
+            From parallel CV parsing and grounded Pakistani job-market intelligence to automated proof-of-work auditing, ATS resume rewrites, and adaptive mock interviews.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
           {AGENT_PREVIEWS.map((agent, idx) => (
             <StaggerChild key={idx} index={idx}>
               <div className="bg-parchment text-ink rounded-sm border border-brass/30 p-4 flex flex-col gap-2 relative shadow-md hover:border-brass transition-colors card-hover paper-grain h-full">

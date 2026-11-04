@@ -29,10 +29,10 @@ function LinkedinIcon({ size = 16, className = "" }: { size?: number; className?
 }
 
 const METRICS = [
-  { value: "7", label: "AI Agents", desc: "Sequential + Parallel pipeline graph" },
-  { value: "4", label: "Live Searches / Session", desc: "Grounding via Serper.dev on job boards" },
-  { value: "15", label: "Mock Interview Qs", desc: "Scored multi-turn AI interview" },
-  { value: "100%", label: "Free for Graduates", desc: "Built for Pakistani tech talent 🇵🇰" },
+  { value: "6", label: "AI Agent Modules", desc: "5-agent core DAG + 1 adaptive mock interviewer" },
+  { value: "4", label: "Search Queries / Miss", desc: "Serper.dev grounding with 48h role+city cache" },
+  { value: "15", label: "Mock Interview Qs", desc: "Multi-turn loop with adaptive follow-up probes" },
+  { value: "Free", label: "Shared Server Tier", desc: "250 daily pipeline runs · BYOK ready" },
 ];
 
 const AGENTS = [
@@ -40,43 +40,60 @@ const AGENTS = [
     icon: UserSearch,
     name: "Profile Agent",
     label: "A1",
-    desc: "Parses your PDF CV into a structured JSON profile — education, experience, skills, and projects.",
+    stage: "Stage 01 · Parallel",
+    desc: "Parses your text-based PDF CV into a structured JSON schema: education, experience, skills, and projects.",
   },
   {
     icon: TrendingUp,
     name: "Market Intelligence Agent",
     label: "A2",
-    desc: "Runs 4 live Serper.dev queries on Pakistani job boards (Rozee.pk, Mustakbil, LinkedIn) for real-time demand data.",
+    stage: "Stage 01 · Parallel",
+    desc: "Executes up to 4 grounded Serper.dev queries across Pakistani job boards, backed by a 48h role+city cache.",
   },
   {
     icon: GitCompare,
     name: "Gap Analysis Agent",
     label: "A3",
-    desc: "Compares your profile against market demand and computes a quantified Readiness Score (0–100).",
+    stage: "Stage 02 · Sequential",
+    desc: "Cross-references your profile against market requirements to compute a quantified Readiness Score (0–100).",
   },
   {
     icon: Map,
     name: "Roadmap Agent",
     label: "A4",
-    desc: "Builds a milestone-driven 30/60/90-day learning plan with free resource links to close skill gaps.",
+    stage: "Stage 03 · Parallel",
+    desc: "Generates a milestone-driven 30/60/90-day action plan with free curated learning resources.",
   },
   {
     icon: FileSignature,
     name: "CV Rewrite Agent",
     label: "A5",
-    desc: "Rewrites your CV bullet points and summary for ATS optimization with a before/after comparison view.",
+    stage: "Stage 03 · Parallel",
+    desc: "Transforms CV experience points and summary into ATS-optimized bullet points with side-by-side diffs.",
   },
   {
     icon: Mic,
-    name: "Interview Agent",
+    name: "Adaptive AI Interview Agent",
     label: "A6",
-    desc: "Runs a multi-turn mock interview with 15 tailored questions and scores each answer on a 1–10 rubric.",
+    stage: "Interactive Module",
+    desc: "Orchestrates a scored 15-question multi-turn mock interview with per-answer evaluation and feedback.",
+  },
+];
+
+const UTILITIES = [
+  {
+    icon: GitBranch,
+    name: "Proof-of-Work Auditor",
+    label: "U1",
+    stage: "Supporting Audit · Stage 01",
+    desc: "SSRF-guarded Python inspection engine auditing commit velocity, repositories, and live links concurrently with Stage 1.",
   },
   {
     icon: Download,
-    name: "Export Agent",
-    label: "A7",
-    desc: "Aggregates all pipeline outputs into a styled, downloadable PDF Career Dossier using ReportLab.",
+    name: "Career Dossier Compiler",
+    label: "U2",
+    stage: "Export Engine",
+    desc: "Deterministic Python/ReportLab PDF generation engine compiling the complete career ledger into a 4-page print-ready dossier.",
   },
 ];
 
@@ -91,7 +108,7 @@ const STEPS = [
     icon: ScanLine,
     step: "02",
     title: "Pipeline Runs Live",
-    desc: "Watch 7 AI agents process your data in real-time via Server-Sent Events — no page reloads.",
+    desc: "Watch 6 AI agents and supporting audit utilities process your data in real-time via Server-Sent Events — no page reloads.",
   },
   {
     icon: BrainCircuit,
@@ -119,9 +136,9 @@ const DELIVERABLES = [
 const CONCEPTS = [
   {
     icon: Layers,
-    title: "Multi-Agent Collaboration",
+    title: "Multi-Agent DAG Collaboration",
     tag: "Core Architecture",
-    desc: "7 specialized agents in a parallel + sequential DAG. Agents (A1 || A2) and (A4 || A5) execute concurrently via asyncio.gather(), cutting end-to-end latency in half.",
+    desc: "6 AI agents and 2 engineering utilities orchestrated in a parallel + sequential DAG. Stage 1 (A1 || A2) and Stage 3 (A4 || A5) execute concurrently via asyncio.gather(), running with smart rate-limit backoff.",
     code: "asyncio.gather(run_profile_agent(), run_market_agent())",
   },
   {
@@ -167,10 +184,16 @@ const TECH_STACK = [
   { icon: GitBranch, name: "TypeScript 5", category: "Strict Typing" },
 ];
 
-const AGENTS_CHECKPOINTS: LedgerCheckpoint[] = AGENTS.map((a) => ({
-  label: `${a.label}: ${a.name} — ${a.desc}`,
-  status: "complete",
-}));
+const AGENTS_CHECKPOINTS: LedgerCheckpoint[] = [
+  ...AGENTS.map((a) => ({
+    label: `${a.label} (${a.stage}): ${a.name} — ${a.desc}`,
+    status: "complete" as const,
+  })),
+  ...UTILITIES.map((u) => ({
+    label: `${u.label} (${u.stage}): ${u.name} — ${u.desc}`,
+    status: "complete" as const,
+  })),
+];
 
 export default function AboutPage() {
   return (
@@ -197,9 +220,9 @@ export default function AboutPage() {
           <p className="font-body text-sm text-warm-gray mt-3 leading-relaxed">
             Ustaad is an AI-powered career intelligence platform built for tech graduates across Pakistan —
             whether you&apos;re from CS, IT, Software Engineering, Data Science, or any tech domain.
-            Upload your CV, pick your target role, and Ustaad&apos;s 7-agent AI pipeline gives you a real-time market snapshot,
-            honest skill gap analysis, a personalized learning roadmap, an ATS-optimized CV rewrite, and a mock interview
-            with scored feedback — all in under 5 minutes.
+            Upload your CV, pick your target role, and Ustaad&apos;s parallel multi-agent pipeline gives you grounded Pakistani
+            job-market intelligence, an honest skill gap analysis, a personalized learning roadmap, an ATS-optimized CV rewrite,
+            and an interactive mock interview with scored feedback.
           </p>
         </div>
 
@@ -253,7 +276,7 @@ export default function AboutPage() {
         </p>
       </AnimatedSection>
 
-      {/* 4. The 7 AI Agents — Detailed Ledger Grid */}
+      {/* 4. Multi-Agent Pipeline & Engineering Utilities — Detailed Ledger */}
       <AnimatedSection className="bg-parchment text-ink rounded-sm border border-brass/40 p-8 md:p-12 shadow-2xl relative flex flex-col gap-8 paper-grain">
         <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
         <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brass z-10 pointer-events-none" />
@@ -261,10 +284,141 @@ export default function AboutPage() {
         <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
 
         <div>
-          <h2 className="font-display text-3xl md:text-4xl text-ink">7 AI Agents. One Career Dossier.</h2>
+          <h2 className="font-display text-3xl md:text-4xl text-ink">6 AI Agents · 2 Engineering Utilities</h2>
           <p className="font-body text-xs text-ink/70 mt-1">
-            Powered by Gemini 3.1 Flash Lite — each agent handles one critical piece of your career puzzle.
+            Deterministic parallel DAG execution paired with adaptive interview probing and Python audit utilities.
           </p>
+        </div>
+
+        {/* Architecture DAG Ledger Diagram */}
+        <div className="p-6 md:p-8 rounded-sm border border-ink/20 bg-ink/[0.02] flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-ink/15 pb-4">
+            <div>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-brass font-bold">Pipeline DAG Specification</span>
+              <h3 className="font-display text-2xl text-ink">Ustaad System Architecture</h3>
+            </div>
+            <span className="font-mono text-xs text-ink/60 bg-ink/5 px-2.5 py-1 rounded-sm border border-ink/10 self-start sm:self-auto">
+              asyncio DAG · 6 AI Agents + 2 Utilities
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-ink/50 font-bold">Core Career Analysis</span>
+
+            {/* Stage 01 */}
+            <div className="p-4 rounded-sm border border-brass/40 bg-parchment/60 flex flex-col gap-3 shadow-xs">
+              <div className="flex items-center justify-between text-xs font-mono text-brass font-bold">
+                <span>Stage 01 · Parallel Execution</span>
+                <span className="text-[10px] text-ink/50 font-normal">asyncio.gather()</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-sm border border-ink/10 bg-white/70">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-brass">A1</span>
+                    <UserSearch size={14} className="text-teal" />
+                  </div>
+                  <h5 className="font-display text-sm text-ink mt-1">Profile Agent</h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">PDF text extraction & JSON schema structuring</p>
+                </div>
+                <div className="p-3 rounded-sm border border-ink/10 bg-white/70">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-brass">A2</span>
+                    <TrendingUp size={14} className="text-teal" />
+                  </div>
+                  <h5 className="font-display text-sm text-ink mt-1">Market Agent</h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">Serper.dev live Pakistani job queries (48h cached)</p>
+                </div>
+              </div>
+              <div className="p-2.5 rounded-sm border border-dashed border-ink/20 bg-ink/[0.02] flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] font-bold text-teal bg-teal/10 px-1.5 py-0.5 rounded-sm">Utility U1</span>
+                  <span className="font-body text-xs font-medium text-ink">GitHub & Portfolio Proof-of-Work Auditor</span>
+                </div>
+                <span className="font-mono text-[10px] text-ink/50 hidden sm:inline">SSRF-guarded Python inspector</span>
+              </div>
+            </div>
+
+            {/* Down Arrow */}
+            <div className="flex justify-center text-brass font-mono text-base font-bold">↓</div>
+
+            {/* Stage 02 */}
+            <div className="p-4 rounded-sm border border-brass/40 bg-parchment/60 flex flex-col gap-2 shadow-xs">
+              <div className="flex items-center justify-between text-xs font-mono text-brass font-bold">
+                <span>Stage 02 · Sequential Synthesis</span>
+                <span className="text-[10px] text-ink/50 font-normal">Requires A1 + A2 complete</span>
+              </div>
+              <div className="p-3 rounded-sm border border-ink/10 bg-white/70 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-brass">A3</span>
+                    <h5 className="font-display text-sm text-ink">Gap Analysis Agent</h5>
+                  </div>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">Profile-to-market matrix reconciliation & heuristic Readiness Score</p>
+                </div>
+                <GitCompare size={16} className="text-teal ml-3 shrink-0" />
+              </div>
+            </div>
+
+            {/* Down Arrow */}
+            <div className="flex justify-center text-brass font-mono text-base font-bold">↓</div>
+
+            {/* Stage 03 */}
+            <div className="p-4 rounded-sm border border-brass/40 bg-parchment/60 flex flex-col gap-3 shadow-xs">
+              <div className="flex items-center justify-between text-xs font-mono text-brass font-bold">
+                <span>Stage 03 · Parallel Generation</span>
+                <span className="text-[10px] text-ink/50 font-normal">asyncio.gather() from A3 context</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-sm border border-ink/10 bg-white/70">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-brass">A4</span>
+                    <Map size={14} className="text-teal" />
+                  </div>
+                  <h5 className="font-display text-sm text-ink mt-1">Roadmap Agent</h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">30/60/90-day learning curriculum & curated free resources</p>
+                </div>
+                <div className="p-3 rounded-sm border border-ink/10 bg-white/70">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-brass">A5</span>
+                    <FileSignature size={14} className="text-teal" />
+                  </div>
+                  <h5 className="font-display text-sm text-ink mt-1">CV Rewrite Agent</h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">ATS bullet transformation with side-by-side comparison</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-ink/15 my-2" />
+
+            {/* Additional Modules */}
+            <span className="font-mono text-[10px] uppercase tracking-wider text-ink/50 font-bold">Additional Modules</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-sm border border-ink/15 bg-white/70 flex items-start gap-3">
+                <span className="font-mono text-xs font-bold text-brass bg-brass/10 border border-brass/30 px-2 py-0.5 rounded-sm shrink-0">A6</span>
+                <div>
+                  <h5 className="font-display text-sm text-ink flex items-center gap-1.5">
+                    Adaptive AI Interview Agent
+                    <Mic size={14} className="text-teal inline" />
+                  </h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">
+                    15-question interactive multi-turn interview with per-answer rubric scoring and adaptive probes.
+                  </p>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-sm border border-ink/15 bg-white/70 flex items-start gap-3">
+                <span className="font-mono text-xs font-bold text-teal bg-teal/10 border border-teal/30 px-2 py-0.5 rounded-sm shrink-0">U2</span>
+                <div>
+                  <h5 className="font-display text-sm text-ink flex items-center gap-1.5">
+                    Career Dossier Compiler
+                    <Download size={14} className="text-teal inline" />
+                  </h5>
+                  <p className="font-body text-[11px] text-ink/70 mt-0.5">
+                    Deterministic ReportLab Python utility exporting all ledger sections into a 4-page PDF.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Vertical LedgerLine signature view */}
@@ -272,24 +426,56 @@ export default function AboutPage() {
           <LedgerLine orientation="vertical" variant="on-parchment" checkpoints={AGENTS_CHECKPOINTS} />
         </div>
 
-        {/* Detailed Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {AGENTS.map((agent, i) => (
-            <StaggerChild key={i} index={i}>
-              <div
-                className="p-5 rounded-sm border border-ink/15 bg-ink/[0.03] flex flex-col gap-2 relative hover:border-brass transition-colors card-hover h-full"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-brass bg-brass/10 border border-brass/30 px-2.5 py-0.5 rounded-sm">
-                    {agent.label}
-                  </span>
-                  <agent.icon size={18} className="text-teal" />
+        {/* Core AI Agents Grid */}
+        <div className="flex flex-col gap-4">
+          <span className="font-mono text-xs font-bold uppercase tracking-wider text-ink/60">
+            6 Specialized AI Agents
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {AGENTS.map((agent, i) => (
+              <StaggerChild key={i} index={i}>
+                <div
+                  className="p-5 rounded-sm border border-ink/15 bg-ink/[0.03] flex flex-col gap-2 relative hover:border-brass transition-colors card-hover h-full"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-brass bg-brass/10 border border-brass/30 px-2.5 py-0.5 rounded-sm">
+                      {agent.label}
+                    </span>
+                    <span className="font-mono text-[10px] text-ink/50 uppercase">{agent.stage}</span>
+                    <agent.icon size={18} className="text-teal" />
+                  </div>
+                  <h4 className="font-display text-lg text-ink mt-1">{agent.name}</h4>
+                  <p className="font-body text-xs text-ink/75 leading-relaxed">{agent.desc}</p>
                 </div>
-                <h4 className="font-display text-lg text-ink mt-1">{agent.name}</h4>
-                <p className="font-body text-xs text-ink/75 leading-relaxed">{agent.desc}</p>
-              </div>
-            </StaggerChild>
-          ))}
+              </StaggerChild>
+            ))}
+          </div>
+        </div>
+
+        {/* Engineering Utilities Grid */}
+        <div className="flex flex-col gap-4 pt-4 border-t border-ink/15">
+          <span className="font-mono text-xs font-bold uppercase tracking-wider text-ink/60">
+            2 Supporting Engineering Utilities
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {UTILITIES.map((util, i) => (
+              <StaggerChild key={i} index={i}>
+                <div
+                  className="p-5 rounded-sm border border-teal/20 bg-teal/[0.02] flex flex-col gap-2 relative hover:border-teal transition-colors card-hover h-full"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-teal bg-teal/10 border border-teal/30 px-2.5 py-0.5 rounded-sm">
+                      {util.label}
+                    </span>
+                    <span className="font-mono text-[10px] text-teal/70 uppercase">{util.stage}</span>
+                    <util.icon size={18} className="text-teal" />
+                  </div>
+                  <h4 className="font-display text-lg text-ink mt-1">{util.name}</h4>
+                  <p className="font-body text-xs text-ink/75 leading-relaxed">{util.desc}</p>
+                </div>
+              </StaggerChild>
+            ))}
+          </div>
         </div>
       </AnimatedSection>
 
@@ -425,10 +611,10 @@ export default function AboutPage() {
               How does Multi-Provider Bring Your Own Key (BYOK) work?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Out of the box, Ustaad runs completely free on Google&apos;s shared Gemini tier. During peak student traffic, shared daily requests can run tight — or you may want to test frontier reasoning models on your CV.
+              Out of the box, Ustaad provides a free shared server tier (defaulting to 250 pipeline runs per day). During peak student traffic or when shared quota is exhausted, you may experience queueing — or you may want to test frontier reasoning models on your CV.
             </p>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              With BYOK mode, you can connect a free key from{" "}
+              With BYOK mode, you can connect a free API key from{" "}
               <a
                 href="https://aistudio.google.com/apikey"
                 target="_blank"
@@ -446,28 +632,52 @@ export default function AboutPage() {
               >
                 Groq
               </a>
-              , or bring keys from OpenAI (ChatGPT), Anthropic (Claude), DeepSeek, Alibaba Qwen, Zhipu GLM, or OpenRouter — including custom model IDs. Keys live strictly in your browser&apos;s localStorage and are never stored in any database. BYOK requests always run directly through your chosen provider and never failover to secondary models.
+              , or bring keys from OpenAI (ChatGPT), Anthropic (Claude), DeepSeek, Alibaba Qwen, Zhipu GLM, or OpenRouter — including custom model IDs. Keys are saved strictly in your browser&apos;s <code>localStorage</code> and transmitted over HTTPS for your requests. Ustaad never persists your BYOK key in its database or application logs. BYOK requests run directly through your chosen provider with provider-reported rate limit backoff and never fail over to unselected secondary models. External provider terms and rate limits apply.
             </p>
           </div>
 
           <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
             <h3 className="font-display text-xl text-brass">
-              Is my CV or data stored anywhere?
+              Is my CV or personal data stored anywhere?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Your parsed CV text and agent outputs are stored server-side in Supabase under an unguessable 128-bit UUID session link until retention expiry (sessions older than 30 days are automatically purged). Anyone with that exact link can view your dashboard, mock interview, and dossier — treat it like a private access token and do not post it publicly. Session pages are configured with strict <code>robots: noindex, nofollow</code> headers so search engines will never index your results.
+              Ustaad processes your CV and career information through its configured AI and search services. Parsed CV text and generated analysis results are stored server-side in Supabase for up to 30 days under an unguessable 128-bit UUID session link (sessions older than 30 days are automatically purged).
             </p>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Your data is never used to train foundational AI models, sold, or shared with third-party advertisers. On the shared server-default tier, requests may failover to an operator-configured secondary model if primary API rate limits occur; BYOK requests never do.
+              Each session uses its private session URL as an access credential. Anyone possessing that exact URL is able to access the associated career analysis, interview transcripts, and PDF dossier — keep it private and do not post it publicly. Session pages are configured with strict <code>robots: noindex, nofollow</code> headers so search engines will never index your results.
+            </p>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Your CV data is never used to train foundational AI models, sold, or shared with third-party advertisers. On the shared server-default tier, requests may failover to an operator-configured secondary model if primary API rate limits occur; BYOK requests never do.
             </p>
           </div>
 
           <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
             <h3 className="font-display text-xl text-brass">
-              Is Ustaad really free to use?
+              Is Ustaad free to use? What are the limits?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Yes, 100% free. The full 7-agent pipeline market research, gap analysis, roadmap, ATS CV rewrite, mock interview, and PDF dossier... is completely free. If you bring your own Gemini key, it is also free under Google&apos;s standard free-tier limits.
+              Yes, Ustaad offers a free shared server tier for Pakistani students and graduates, supported by a daily capacity limit (defaulting to 250 pipeline runs per day). All core features — Pakistani job-market intelligence, gap analysis, 30/60/90 roadmap, ATS CV rewrite, mock interview, and PDF dossier export — are accessible on this tier.
+            </p>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              If the shared daily server quota is exhausted, you can continue immediately without waiting by toggling BYOK mode with your own free key (e.g. from Google AI Studio or Groq).
+            </p>
+          </div>
+
+          <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
+            <h3 className="font-display text-xl text-brass">
+              Are Readiness Scores and ATS benchmarks a guarantee of employment?
+            </h3>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              No. Career readiness scores, ATS optimization metrics, and interview evaluations generated by Ustaad are heuristic, advisory estimates designed for self-guided preparation and skill benchmarking. They do not constitute a hiring guarantee or employment offer from any company. Actual hiring outcomes depend on employer-specific criteria, human interviews, technical assessments, and evolving market conditions.
+            </p>
+          </div>
+
+          <div className="border-l-2 border-brass pl-6 py-1 flex flex-col gap-2">
+            <h3 className="font-display text-xl text-brass">
+              What resume formats are supported?
+            </h3>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Ustaad supports text-based PDF documents up to 5MB. Scanned image-only PDFs (such as smartphone camera photographs or flattened raster exports without embedded font/text streams) are currently unsupported because text extraction requires machine-readable PDF layers. For best results, export your resume directly as a PDF from Google Docs, Microsoft Word, Canva, or LaTeX.
             </p>
           </div>
         </div>
@@ -520,8 +730,8 @@ export default function AboutPage() {
               <h3 className="font-display text-2xl text-ink mt-4">Syed Muhammad Hassan</h3>
               <p className="font-mono text-xs text-teal font-semibold mt-1">Backend/Frontend Engineer/Architect & AI Agents</p>
               <p className="font-body text-xs text-ink/80 mt-3 leading-relaxed">
-                GenAI developer and co-founder & CTO of AgenticEra Systems. Built the entire 7-agent pipeline,
-                FastAPI backend, orchestration logic and contributed across the frontend as well.
+                GenAI developer and co-founder & CTO of AgenticEra Systems. Built the multi-agent orchestration DAG,
+                FastAPI backend, multi-provider BYOK engine, and contributed across the frontend.
               </p>
             </div>
 
@@ -610,8 +820,8 @@ export default function AboutPage() {
           Ready to Launch Your Career OS?
         </h2>
         <p className="font-body text-sm text-ink/70 max-w-xl leading-relaxed">
-          Upload your CV, select your target role, and get your complete market snapshot,
-          gap analysis, roadmap, ATS rewrite, and AI mock interview in under 5 minutes.
+          Upload your CV, select your target role, and get your complete Pakistani job-market intelligence,
+          gap analysis, roadmap, ATS rewrite, and AI mock interview.
         </p>
 
         <Link
