@@ -43,7 +43,7 @@ Ustaad originated as a submission to the **Kaggle × Google 5-Day AI Agents Inte
 | Proof-of-Work Auditor | SSRF-guarded concurrent audit of public GitHub activity (90-day commits, language breakdown, demo ratios) and personal portfolio health (HTTPS, OpenGraph tags, SPA shell warning, contact CTA) |
 | Pakistani market grounding | Four concurrent Serper.dev search queries per cache miss, live applyable job matches from Rozee.pk/LinkedIn, statutory PKR FBR net-take-home tax calculations and 48-hour role+city cache |
 | Gap and Target JD analysis | Quantified `0–100` Readiness Score, prioritized critical vs. nice-to-have gaps, plus optional `jd_match_score` and missing-keyword extraction against a pasted job description |
-| Interactive 30/60/90 roadmap | Weekly execution plan with zero-404 verified learning links, persistent task checkboxes, RFC 5545 `.ics` calendar schedule export and live readiness-lift projection |
+| Interactive 30/60/90 roadmap | Weekly execution plan with curated canonical free learning courses and deterministic search fallbacks, persistent task checkboxes, RFC 5545 `.ics` calendar schedule export and live readiness-lift projection |
 | ATS CV rewrite and outreach | Quantified before/after experience rewrites, structured project bullets, ATS score estimation, tailored cover-note/referral templates and a printable A4 `/resume/[sessionId]` route |
 | Re-Audit Score Delta Loop | Re-evaluate revised CVs reusing cached Pakistani market data (`0` Serper calls), computing readiness and ATS match score deltas alongside resolved critical gaps |
 | Mock Interview 2.0 & Drill-Down | Four interview modes (`sprint_5`, `technical`, `behavioral_hr`, `full_15`), three calibration tiers, per-answer scoring and adaptive interviewer follow-up probes for surface-level answers |
@@ -134,7 +134,8 @@ Populate `backend/.env` and `frontend/.env.local` using the tables in [Configura
 ### 4. Check and build
 
 ```bash
-cd backend && ./venv/bin/pytest -q --tb=short && cd ..
+cd backend && ./venv/bin/pytest test_v2_byok.py test_production_solid.py -q --tb=short && cd ..
+npm --prefix frontend test
 npm --prefix frontend run typecheck
 npm --prefix frontend run lint
 npm --prefix frontend run build
@@ -168,6 +169,14 @@ npm run dev
 | `CORS_ORIGINS` | Comma-separated allowed browser origins (`http://localhost:3000` locally) |
 | `KAGGLE_LLM_URL` | Optional secondary OpenAI-compatible failover URL when the default Gemini key hits `429`/`503` |
 | `GITHUB_TOKEN` | Optional public-read GitHub token to raise rate limits during Proof-of-Work repository inspection |
+| `DAILY_SESSION_LIMIT` | Optional: daily free-tier pipeline run ceiling (defaults to `250`) |
+| `DAILY_INTERVIEW_CALL_LIMIT` | Optional: daily free-tier interview call ceiling (defaults to `2000`) |
+| `RATE_LIMIT_PIPELINE_STARTS` | Optional: per-IP pipeline start rate limit per hour (defaults to `8`) |
+| `RATE_LIMIT_INTERVIEW_CALLS` | Optional: per-IP interview calls rate limit per hour (defaults to `120`) |
+| `RATE_LIMIT_KEY_VALIDATIONS` | Optional: per-IP key validation rate limit per hour (defaults to `30`) |
+| `SESSION_RETENTION_DAYS` | Optional: session retention age in days before automated purge (defaults to `30`) |
+| `ENABLE_LLM_FAILOVER` | Optional: enable fallback to secondary LLM endpoints (defaults to `false`) |
+| `TRUST_PROXY_HEADERS` | Optional: trust `X-Forwarded-For` from reverse proxies (defaults to `false`) |
 
 ### Frontend: `frontend/.env.local`
 
@@ -186,6 +195,7 @@ npm run dev
 | `/api/pipeline/reaudit/{baseline_session_id}` | `POST`: re-audit revised CV reusing baseline Pakistani market intelligence (`0` Serper calls) and compute score deltas |
 | `/api/pipeline/status/{session_id}` | `GET`: stream real-time SSE agent progress with DB-polling recovery on reconnect |
 | `/api/pipeline/results/{session_id}` | `GET`: retrieve consolidated session status and agent JSONB outputs |
+| `/api/pipeline/contact/{session_id}` | `GET`: retrieve candidate contact handles without exposing raw CV text |
 | `/api/pipeline/quota-status` | `GET`: inspect shared daily server-default request capacity |
 | `/api/interview/active/{session_id}` | `GET`: check for an existing in-progress or completed mock interview |
 | `/api/interview/start/{session_id}` | `POST`: generate or resume a tailored interview (`mode`, `difficulty`, `force_new`) |
@@ -222,20 +232,21 @@ npm run dev
 
 ## Verification
 
-The recorded verification checks on **3 November 2026** include:
+The recorded verification checks on **4 November 2026** include:
 
 | Check | Result |
 | --- | --- |
-| Backend regression suite (`unittest` / `pytest`) | 14 deterministic tests passed in `0.19s` on Python 3.12.3 (`fastapi 0.162.0`, `PyMuPDF 2.1`, `reportlab 5.1.0`) with zero live network or database calls |
-| Frontend TypeScript & ESLint 9 | `npm run typecheck` and `npm run lint` passed with 0 errors and 0 warnings |
-| Frontend production build | Next.js `16.4.4` (Turbopack) + React `19.3.1` compiled and prerendered cleanly on Node `v22.21.1` |
-| Security & pipeline invariants | Server-default lock, 8-provider BYOK routing, SSRF portfolio/redirect guards, Proof-of-Work parsing, cross-session probe checks, zero-Serper re-audit delta loop and secret redaction verified |
+| Backend test suites (`pytest`) | 37 deterministic tests passed across `test_v2_byok.py` (17 tests) and `test_production_solid.py` (20 tests) on Python 3.12.3 (`fastapi 0.162.0`, `PyMuPDF 2.1`, `reportlab 5.1.0`) with zero live network or Supabase mutations |
+| Frontend unit tests (`node --test`) | 4 tests passed in `62ms` via `npm test` verifying canonical roadmap link routing, deterministic search fallbacks and RFC 5545 `.ics` formatting |
+| Frontend TypeScript & ESLint 9 | `npm run typecheck` and `npm run lint` passed with 0 errors and 0 warnings under React 19 and Next.js 16 flat config |
+| Frontend production build | Next.js `16.4.4` (Turbopack) + React `19.3.1` compiled and prerendered cleanly on Node `v24` (8 static and dynamic routes generated) |
+| Security & pipeline invariants | Server-default lock, 8-provider BYOK routing, SSRF portfolio/redirect guards, Proof-of-Work parsing, cross-session probe checks, zero-Serper re-audit delta loop, PII endpoint isolation and secret redaction verified |
 
 See the [verification record](docs/VERIFICATION.md) for detailed coverage and evaluation boundaries. Reproduce the full local check suite from the repository root:
 
 ```bash
-cd backend && ./venv/bin/python3 -m unittest -v test_v2_byok.py && cd ..
-npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run build
+cd backend && ./venv/bin/pytest -v test_v2_byok.py test_production_solid.py && cd ..
+npm --prefix frontend test && npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend run build
 ```
 
 ## Operations
@@ -276,11 +287,14 @@ backend/
     pdf_generator.py         ReportLab Career Dossier PDF builder
     proof_of_work.py         SSRF-guarded GitHub API and personal portfolio auditor
   db/                        Supabase client, 48h market cache and SQL schema
-  test_v2_byok.py            Deterministic 14-test backend regression suite
+  settings.py                Centralized environment settings and operational defaults
+  test_v2_byok.py            Deterministic 17-test regression suite (BYOK, SSRF, DAG, schemas)
+  test_production_solid.py   Deterministic 20-test resilience suite (rate limits, timeouts, PII safety)
 frontend/
   app/                       Next.js 16 App Router pages (Home, Dashboard, Interview, Resume, Dossier, About)
   components/                Manuscript Ledger UI components, ProofOfWorkCard, BYOK studio and visual charts
-  lib/                       API client, SSE consumer, zero-404 resourceLinks/.ics exporter and BYOK state
+  lib/                       API client, SSE consumer, curated resourceLinks/.ics exporter and BYOK state
+  tests/                     Frontend unit test suite (resourceLinks and ICS export)
   public/images/team/        Locally cached GitHub avatars for team attribution
 docs/                        Deployment, BYOK security, Supabase, verification and licensing guides
 ```

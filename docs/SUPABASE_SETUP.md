@@ -53,5 +53,5 @@ Before issuing four live Serper.dev Google Search queries and a market extractio
 ## 4. Access and retention considerations
 
 - **Session links as bearer capabilities:** Anyone holding a session UUID can view its results via `/dashboard/{session_id}`, `/interview/{session_id}`, `/resume/{session_id}` and `/dossier/{session_id}`. Treat session links as private URLs.
-- **Row Level Security:** Because all database reads and writes occur server-side in FastAPI using `SUPABASE_SERVICE_KEY`, keep public PostgREST access restricted rather than granting anonymous browser write policies in production deployments.
-- **Retention:** Operators running public instances should periodically purge old rows from `sessions` (`ON DELETE CASCADE` removes associated `interview_sessions`) according to their disclosed retention policy.
+- **Row Level Security (RLS) and Deny-by-Default:** `backend/db/schemas.sql` explicitly executes `ALTER TABLE ... ENABLE ROW LEVEL SECURITY;` on `sessions`, `interview_sessions` and `quota_tracker`. By design, no public `anon` policies are granted, ensuring direct PostgREST table queries from unauthorized clients are denied by default. All database reads and writes occur server-side in FastAPI using the private `SUPABASE_SERVICE_KEY`.
+- **Retention:** Operators running public instances should periodically purge old rows from `sessions` (`ON DELETE CASCADE` removes associated `interview_sessions`) according to their disclosed retention policy (configurable via `SESSION_RETENTION_DAYS` in `settings.py`, defaulting to 30 days).

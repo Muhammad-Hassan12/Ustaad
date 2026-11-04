@@ -44,6 +44,7 @@ cp .env.example .env.local
 ## Development and production scripts
 
 ```bash
+npm test           # Run native Node.js unit tests (tests/lib.test.mjs)
 npm run dev        # Start local Next.js development server on http://localhost:3000
 npm run typecheck  # Run strict TypeScript check (tsc --noEmit)
 npm run lint       # Run ESLint 9 flat-config check
