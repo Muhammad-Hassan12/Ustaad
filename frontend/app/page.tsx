@@ -17,7 +17,6 @@ import {
 import {
   ArrowRight,
   Loader2,
-  Sparkles,
   ChevronDown,
   AlertCircle,
   UserSearch,
@@ -27,11 +26,8 @@ import {
   FileSignature,
   Mic,
   Download,
-  ShieldCheck,
-  Zap,
   Globe,
   FileText,
-  Cpu,
   Code2,
 } from "lucide-react";
 
@@ -153,11 +149,6 @@ export default function Home() {
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start pt-4">
         {/* Left Column: Hero Copy & Ledger Line */}
         <div className="lg:col-span-7 flex flex-col gap-6 lg:pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-sm bg-parchment/5 text-brass border border-brass/30 text-xs font-mono tracking-wider uppercase self-start">
-            <Sparkles size={13} />
-            AI Career OS · Built for Pakistani Tech Talent
-          </div>
-
           <h1 className="font-display text-6xl md:text-8xl leading-none tracking-tight text-shimmer">
             Meet Ustaad
             <span
@@ -178,21 +169,16 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Feature Badges */}
-          <div className="flex flex-wrap items-center gap-3 my-1">
-            <span className="font-mono text-xs text-brass bg-brass/10 border border-brass/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <Zap size={13} className="shrink-0" /> 7 Parallel AI Agents
-            </span>
-            <span className="font-mono text-xs text-teal bg-teal/10 border border-teal/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <Globe size={13} className="shrink-0" /> Live Pakistani Market Grounding
-            </span>
-            <span className="font-mono text-xs text-parchment bg-parchment/10 border border-warm-gray/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <Cpu size={13} className="shrink-0 text-brass" /> Multi-Model BYOK Ready
-            </span>
-            <span className="font-mono text-xs text-parchment bg-parchment/10 border border-warm-gray/30 px-3.5 py-1.5 rounded-sm inline-flex items-center gap-2 whitespace-nowrap leading-none">
-              <ShieldCheck size={13} className="shrink-0 text-teal" /> 100% Free &amp; Open Source
-            </span>
-          </div>
+          {/* Engineering Specs Strip (Quiet Mono Row) */}
+          <p className="font-mono text-xs text-warm-gray/70 tracking-wide my-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span>7 parallel agents</span>
+            <span className="text-warm-gray/40 select-none">·</span>
+            <span>live Pakistani market data</span>
+            <span className="text-warm-gray/40 select-none">·</span>
+            <span>bring your own key</span>
+            <span className="text-warm-gray/40 select-none">·</span>
+            <span>free &amp; open source</span>
+          </p>
 
           {/* Horizontal LedgerLine Workflow */}
           <div className="mt-4 pt-4 border-t border-warm-gray/15 max-w-lg">
