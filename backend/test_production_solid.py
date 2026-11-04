@@ -398,6 +398,29 @@ class TestLLMJSONParserAndSecretRedaction(unittest.TestCase):
         self.assertNotIn("gsk_1234567890abcdef1234567890", scrubbed)
         self.assertIn("[REDACTED_KEY]", scrubbed)
 
+    def test_retry_after_extraction_from_headers_and_body(self):
+        from agents.llm.adapters import _extract_retry_after
+        import httpx
+
+        # 1. From standard Retry-After header
+        resp1 = httpx.Response(429, headers={"retry-after": "12.5"})
+        self.assertEqual(_extract_retry_after(resp1, ""), 12.5)
+
+        # 2. From retry-after-ms header
+        resp2 = httpx.Response(429, headers={"retry-after-ms": "4500"})
+        self.assertEqual(_extract_retry_after(resp2, ""), 4.5)
+
+        # 3. From Groq/provider error text e.g. "Please try again in 9.12s."
+        resp3 = httpx.Response(429)
+        self.assertEqual(
+            _extract_retry_after(resp3, "Rate limit reached. Please try again in 9.12s. Need more tokens?"),
+            9.12,
+        )
+
+        # 4. Fallback None when absent
+        resp4 = httpx.Response(429)
+        self.assertIsNone(_extract_retry_after(resp4, "Generic rate limit reached."))
+
 
 class TestProofOfWorkTimeoutAndSSRF(unittest.IsolatedAsyncioTestCase):
     async def test_portfolio_crawler_hard_timeout_isolation(self):

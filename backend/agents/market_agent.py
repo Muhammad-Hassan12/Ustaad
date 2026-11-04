@@ -93,11 +93,30 @@ async def run_market_agent(
     )
     verified_job_links = _extract_verified_job_links(search_results)
 
+    # Clean and compress search results to essential titles, snippets, and links to minimize token usage
+    clean_results = []
+    for entry in search_results:
+        if not isinstance(entry, dict):
+            continue
+        clean_entry = {
+            "query": entry.get("query"),
+            "results": [
+                {
+                    "title": (item.get("title") or "")[:120],
+                    "snippet": (item.get("snippet") or "")[:240],
+                    "link": (item.get("link") or "")[:160],
+                }
+                for item in entry.get("results", [])[:8]
+                if isinstance(item, dict)
+            ],
+        }
+        clean_results.append(clean_entry)
+
     # Step 2: Pass to configured LLM for structured extraction
     prompt = MARKET_USER_TEMPLATE.format(
         target_role=target_role,
         target_city=target_city,
-        search_results=json.dumps(search_results, indent=2),
+        search_results=json.dumps(clean_results, indent=2),
     )
     result = await call_llm_json(MARKET_SYSTEM_PROMPT, prompt, llm_config=cfg)
     if isinstance(result, dict):

@@ -181,9 +181,9 @@ export const FALLBACK_PROVIDERS: ProviderSpec[] = [
     has_regions: false,
     regions: [],
     preset_models: [
-      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", tag: "Recommended" },
-      { id: "qwen/qwen3-32b", label: "Qwen3 32B", tag: "Reasoning" },
-      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant", tag: "Ultra-Fast" },
+      { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", tag: "Recommended (High Quota)" },
+      { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant", tag: "Ultra-Fast (High Quota)" },
+      { id: "qwen/qwen3-32b", label: "Qwen3 32B (Preview)", tag: "Low Quota Cap" },
     ],
   },
   {

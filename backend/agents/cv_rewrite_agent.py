@@ -35,10 +35,34 @@ async def run_cv_rewrite_agent(
         for k, v in (profile_data or {}).items()
         if k not in ("target_job_description", "reaudit_delta", "proof_of_work")
     }
+    lean_market = {
+        k: v
+        for k, v in (market_data or {}).items()
+        if k not in (
+            "raw_job_listings",
+            "verified_job_links",
+            "unverified",
+            "cache_hit",
+            "source_mode",
+            "generated_at",
+            "live_data_available",
+        )
+    }
+    lean_gap = {
+        k: v
+        for k, v in (gap_data or {}).items()
+        if k in (
+            "overall_readiness_score",
+            "critical_gaps",
+            "moderate_gaps",
+            "strengths_to_highlight",
+            "summary",
+        )
+    }
     prompt = CV_REWRITE_USER_TEMPLATE.format(
         candidate_profile=json.dumps(lean_profile, indent=2),
-        market_data=json.dumps(market_data, indent=2),
-        gap_data=json.dumps(gap_data, indent=2),
+        market_data=json.dumps(lean_market, indent=2),
+        gap_data=json.dumps(lean_gap, indent=2),
         jd_section=combined_section,
     )
     return await call_llm_json(CV_REWRITE_SYSTEM_PROMPT, prompt, llm_config=cfg)

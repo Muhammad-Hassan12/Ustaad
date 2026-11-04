@@ -43,9 +43,23 @@ async def run_gap_agent(
         if k not in ("target_job_description", "reaudit_delta", "proof_of_work")
     }
 
+    lean_market = {
+        k: v
+        for k, v in (market_data or {}).items()
+        if k not in (
+            "raw_job_listings",
+            "verified_job_links",
+            "unverified",
+            "cache_hit",
+            "source_mode",
+            "generated_at",
+            "live_data_available",
+        )
+    }
+
     prompt = GAP_USER_TEMPLATE.format(
         candidate_profile=json.dumps(lean_profile, indent=2),
-        market_data=json.dumps(market_data, indent=2),
+        market_data=json.dumps(lean_market, indent=2),
         jd_section=combined_section,
         jd_score_example=jd_score_example,
         jd_keywords_example=jd_keywords_example,

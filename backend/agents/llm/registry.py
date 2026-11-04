@@ -168,9 +168,9 @@ PROVIDER_REGISTRY: dict[str, ProviderSpec] = {
         free_tier=True,
         badge="Free & Fast",
         preset_models=[
-            ModelPreset("llama-3.3-70b-versatile", "Llama 3.3 70B Versatile", "Recommended"),
-            ModelPreset("qwen/qwen3-32b", "Qwen3 32B", "Reasoning"),
-            ModelPreset("llama-3.1-8b-instant", "Llama 3.1 8B Instant", "Ultra-Fast"),
+            ModelPreset("llama-3.3-70b-versatile", "Llama 3.3 70B Versatile", "Recommended (High Quota)"),
+            ModelPreset("llama-3.1-8b-instant", "Llama 3.1 8B Instant", "Ultra-Fast (High Quota)"),
+            ModelPreset("qwen/qwen3-32b", "Qwen3 32B (Preview)", "Low Quota Cap"),
         ],
     ),
     "openrouter": ProviderSpec(

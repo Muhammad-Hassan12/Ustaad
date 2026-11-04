@@ -222,7 +222,7 @@ async def call_llm(
     - BYOK mode: fast-fails on invalid key / missing custom model; retries transient 429/5xx.
     """
     config = llm_config or build_default_llm_config()
-    retries = max_retries if max_retries is not None else (8 if not config.is_byok else 4)
+    retries = max_retries if max_retries is not None else (8 if not config.is_byok else 6)
     failover_allowed = not config.is_byok and settings.llm_failover_enabled()
 
     last_err: Optional[Exception] = None
@@ -245,9 +245,12 @@ async def call_llm(
                     logger.error("Secondary failover failed: %s", redact_secrets(str(fb_err), config.api_key))
 
             if e.retryable and attempt < retries - 1:
-                wait = min(2 ** attempt, 15)
+                if e.retry_after is not None and e.retry_after > 0:
+                    wait = min(max(e.retry_after + 0.5, 1.0), 35.0)
+                else:
+                    wait = min(2 ** attempt, 15)
                 logger.warning(
-                    "Transient %s error (%s, attempt %d/%d). Retrying in %ds...",
+                    "Transient %s error (%s, attempt %d/%d). Retrying in %.1fs...",
                     config.provider,
                     e.error_code,
                     attempt + 1,

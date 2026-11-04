@@ -3,6 +3,7 @@ Lightweight async httpx wire adapters for Gemini, OpenAI-compatible APIs
 (OpenAI, DeepSeek, Qwen, GLM, Groq, OpenRouter), and Anthropic Claude.
 """
 from typing import Optional
+import re
 import httpx
 from agents.llm.config import LLMConfig
 from agents.llm.registry import (
@@ -34,12 +35,14 @@ class LLMProviderError(Exception):
         error_code: str = "UPSTREAM_ERROR",
         status_code: int = 500,
         retryable: bool = False,
+        retry_after: Optional[float] = None,
     ):
         super().__init__(user_message)
         self.user_message = user_message
         self.error_code = error_code
         self.status_code = status_code
         self.retryable = retryable
+        self.retry_after = retry_after
 
 
 def _is_reasoning_model(model_id: str) -> bool:
@@ -64,6 +67,42 @@ def _extract_upstream_detail(resp: httpx.Response) -> str:
     except Exception:
         pass
     return (resp.text or "")[:200]
+
+
+def _extract_retry_after(resp: httpx.Response, detail: str) -> Optional[float]:
+    """Extract recommended retry delay (in seconds) from response headers or message text."""
+    # 1. Standard HTTP Retry-After header
+    ra = resp.headers.get("retry-after")
+    if ra:
+        try:
+            val = float(ra.strip())
+            if val > 0:
+                return val
+        except (ValueError, TypeError):
+            pass
+
+    # 2. Millisecond variant (e.g. retry-after-ms)
+    ra_ms = resp.headers.get("retry-after-ms")
+    if ra_ms:
+        try:
+            val_ms = float(ra_ms.strip())
+            if val_ms > 0:
+                return val_ms / 1000.0
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Regex match on body text like "Please try again in 9.12s" or "after 5s"
+    if detail:
+        m = re.search(r"(?:try again in|retry in|wait|after)\s*(\d+(?:\.\d+)?)\s*(?:s|seconds)?", detail, re.IGNORECASE)
+        if m:
+            try:
+                val = float(m.group(1))
+                if val > 0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+
+    return None
 
 
 def _classify_http_error(provider_name: str, model: str, resp: httpx.Response) -> LLMProviderError:
@@ -108,19 +147,23 @@ def _classify_http_error(provider_name: str, model: str, resp: httpx.Response) -
                 status_code=429,
                 retryable=False,
             )
+        retry_after = _extract_retry_after(resp, detail)
         return LLMProviderError(
             f"{provider_name} rate limit reached ({model}). {detail}".strip(),
             error_code="RATE_LIMITED",
             status_code=429,
             retryable=True,
+            retry_after=retry_after,
         )
 
     if status in (500, 502, 503, 504, 529):
+        retry_after = _extract_retry_after(resp, detail)
         return LLMProviderError(
             f"{provider_name} is temporarily overloaded (HTTP {status}). {detail}".strip(),
             error_code="PROVIDER_OVERLOADED",
             status_code=status,
             retryable=True,
+            retry_after=retry_after,
         )
 
     return LLMProviderError(
