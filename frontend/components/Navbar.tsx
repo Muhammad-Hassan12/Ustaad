@@ -54,6 +54,9 @@ export default function Navbar() {
             <span className="font-body text-[10px] sm:text-xs text-brass tracking-wider uppercase font-semibold">
               USTAAD
             </span>
+            <span className="font-mono text-[9px] sm:text-[10px] text-warm-gray/60 font-normal tracking-wider border border-warm-gray/20 rounded-xs px-1 py-px select-none self-center">
+              v2.0
+            </span>
           </span>
         </Link>
 

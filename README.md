@@ -1,12 +1,17 @@
-# Ustaad
+# Ustaad (أُستاد) ... AI Career OS for Pakistani Tech Talent
 
-**Multi-agent career intelligence, live Pakistani market grounding and configurable mock interviews for software graduates.**
+[![Backend - FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Frontend - Next.js 16](https://img.shields.io/badge/Frontend-Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
+[![Tests - 41 Passing](https://img.shields.io/badge/Tests-41_Passing-2ea44f?style=for-the-badge&logo=pytest&logoColor=white)](docs/VERIFICATION.md)
+[![Multi-Model BYOK](https://img.shields.io/badge/Multi--Model-8_Providers_BYOK-7952b3?style=for-the-badge)](docs/PROVIDERS_AND_BYOK.md)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
 
-[Open Ustaad](https://www.ustaad.systems)
+> **Ustaad** (*Urdu: أُستاد = Teacher / Master*) is an AI-powered Career Operating System purpose-built to help Pakistani technology graduates navigate, prepare for, and succeed in the local tech job market.
+>
+> *"The career coach Pakistan never had."*
 
-[License: Apache 2.0](LICENSE)
-
-[Methodology & team](https://www.ustaad.systems/about) · [BYOK & provider model](docs/PROVIDERS_AND_BYOK.md) · [Verification record](docs/VERIFICATION.md)
+[**Live App**](https://www.ustaad.systems) · [**Methodology & Team**](https://www.ustaad.systems/about) · [**BYOK & Providers**](docs/PROVIDERS_AND_BYOK.md) · [**Verification Record (41 Tests)**](docs/VERIFICATION.md) · [**Deployment Guide**](docs/DEPLOYMENT.md)
 
 Ustaad turns a graduate's PDF CV and target role into a grounded career assessment tailored to Pakistan's technology job market. A parallel multi-agent pipeline extracts structured candidate data, queries live Pakistani job listings (`rozee.pk`, `mustakbil.com`, LinkedIn Pakistan and local hiring boards), evaluates skill and job-description gaps, builds a 30/60/90-day free learning roadmap and rewrites CV experience into quantified ATS-ready bullets.
 
