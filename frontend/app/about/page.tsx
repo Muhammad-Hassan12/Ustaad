@@ -518,9 +518,9 @@ export default function AboutPage() {
                 className="w-14 h-14 rounded-full shadow-md border-2 border-brass object-cover"
               />
               <h3 className="font-display text-2xl text-ink mt-4">Syed Muhammad Hassan</h3>
-              <p className="font-mono text-xs text-teal font-semibold mt-1">Backend Engineer & AI Agents</p>
+              <p className="font-mono text-xs text-teal font-semibold mt-1">Backend/Frontend Engineer/Architect & AI Agents</p>
               <p className="font-body text-xs text-ink/80 mt-3 leading-relaxed">
-                GenAI developer and co-founder of AgenticEra Systems. Built the entire 7-agent pipeline,
+                GenAI developer and co-founder & CTO of AgenticEra Systems. Built the entire 7-agent pipeline,
                 FastAPI backend, orchestration logic and contributed across the frontend as well.
               </p>
             </div>
@@ -572,7 +572,7 @@ export default function AboutPage() {
               <h3 className="font-display text-2xl text-ink mt-4">Abdul Mannan Fazlani</h3>
               <p className="font-mono text-xs text-teal font-semibold mt-1">Frontend Engineer & UI/UX</p>
               <p className="font-body text-xs text-ink/80 mt-3 leading-relaxed">
-                Full-stack, agentic systems developer and Founder of AgenticEra Systems.
+                Full-stack developer and Founder of AgenticEra Systems.
                 Built the entire Next.js frontend, dashboard, and interview UI.
               </p>
             </div>

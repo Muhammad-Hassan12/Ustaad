@@ -1,5 +1,7 @@
 # Ustaad (أُستاد) ... AI Career OS for Pakistani Tech Talent
 
+<div align="center">
+
 [![Backend - FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Frontend - Next.js 16](https://img.shields.io/badge/Frontend-Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
@@ -7,11 +9,15 @@
 [![Multi-Model BYOK](https://img.shields.io/badge/Multi--Model-8_Providers_BYOK-7952b3?style=for-the-badge)](docs/PROVIDERS_AND_BYOK.md)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue?style=for-the-badge)](LICENSE)
 
+<br/>
+
 > **Ustaad** (*Urdu: أُستاد = Teacher / Master*) is an AI-powered Career Operating System purpose-built to help Pakistani technology graduates navigate, prepare for, and succeed in the local tech job market.
 >
 > *"The career coach Pakistan never had."*
 
 [**Live App**](https://www.ustaad.systems) · [**Methodology & Team**](https://www.ustaad.systems/about) · [**BYOK & Providers**](docs/PROVIDERS_AND_BYOK.md) · [**Verification Record (41 Tests)**](docs/VERIFICATION.md) · [**Deployment Guide**](docs/DEPLOYMENT.md)
+
+</div>
 
 Ustaad turns a graduate's PDF CV and target role into a grounded career assessment tailored to Pakistan's technology job market. A parallel multi-agent pipeline extracts structured candidate data, queries live Pakistani job listings (`rozee.pk`, `mustakbil.com`, LinkedIn Pakistan and local hiring boards), evaluates skill and job-description gaps, builds a 30/60/90-day free learning roadmap and rewrites CV experience into quantified ATS-ready bullets.
 
@@ -322,8 +328,8 @@ Ustaad is built and maintained by **AgenticEra Systems** in Karachi, Pakistan. I
 
 | Profile image | Team member | Team focus | Profiles |
 | --- | --- | --- | --- |
-| <img src="frontend/public/images/team/muhammad-hassan12.jpg" width="64" height="64" alt="Syed Muhammad Hassan’s GitHub avatar"> | Syed Muhammad Hassan | Backend architecture, multi-agent orchestration & BYOK engine | [GitHub](https://github.com/Muhammad-Hassan12) · [LinkedIn](https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/) · [Portfolio](https://www.smhassan.me/) |
-| <img src="frontend/public/images/team/abdulmannan991.png" width="64" height="64" alt="Abdul Mannan Fazlani’s GitHub avatar"> | Abdul Mannan Fazlani | Frontend engineering, Manuscript Ledger UI/UX & interactive workspace | [GitHub](https://github.com/abdulmannan991) · [LinkedIn](https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/) |
+| <img src="frontend/public/images/team/muhammad-hassan12.jpg" width="64" height="64" alt="Syed Muhammad Hassan’s GitHub avatar"> | Syed Muhammad Hassan | Backend architecture, Frontend Engineering, multi-agent orchestration & BYOK engine | [GitHub](https://github.com/Muhammad-Hassan12) · [LinkedIn](https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/) · [Portfolio](https://www.smhassan.me/) |
+| <img src="frontend/public/images/team/abdulmannan991.png" width="64" height="64" alt="Abdul Mannan Fazlani’s GitHub avatar"> | Abdul Mannan Fazlani | Frontend engineering, UI/UX & interactive workspace | [GitHub](https://github.com/abdulmannan991) · [LinkedIn](https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/) |
 
 Profile images are locally stored snapshots of the corresponding GitHub avatars; sources and separate rights are documented in the [licensing guide](docs/LICENSING.md#team-profile-images).
 
