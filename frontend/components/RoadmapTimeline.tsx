@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
-  Map,
+  Map as MapIcon,
   Zap,
   FolderKanban,
   Clock,
@@ -206,7 +206,7 @@ export default function RoadmapTimeline({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-ink/15 pb-4 gap-4">
         <div>
           <h3 className="font-display text-2xl text-ink flex items-center gap-2.5">
-            <Map className="w-5 h-5 text-teal" /> Interactive Learning Roadmap
+            <MapIcon className="w-5 h-5 text-teal" /> Interactive Learning Roadmap
           </h3>
           <p className="font-body text-xs text-ink/65 mt-0.5">
             Check off completed study tasks — progress saves automatically in your browser.
@@ -294,10 +294,16 @@ export default function RoadmapTimeline({
               </div>
 
               <div className="flex flex-col gap-2">
-                {week.tasks.map((task, tidx) => {
+                {(week.tasks || []).map((task, tidx) => {
                   const itemKey = `${activeTab}-w${idx}-t${tidx}`;
                   const isChecked = !!completedKeys[itemKey];
                   const linkInfo = resolveResourceUrl(task.resource, task.platform);
+                  const formattedHours =
+                    typeof task.estimated_hours === "number"
+                      ? `${task.estimated_hours}h`
+                      : task.estimated_hours
+                      ? `${task.estimated_hours}h`
+                      : "—";
                   return (
                     <div
                       role="checkbox"
@@ -339,21 +345,34 @@ export default function RoadmapTimeline({
                               onClick={(e) => e.stopPropagation()}
                               onKeyDown={(e) => e.stopPropagation()}
                               className="inline-flex items-center gap-1.5 font-mono text-[11px] text-teal hover:text-brass underline underline-offset-2 transition-colors cursor-pointer"
-                              title={linkInfo.isDirect ? `Direct course: ${linkInfo.label}` : `Search on ${task.platform}`}
+                              title={
+                                linkInfo.isCurated
+                                  ? `Curated course: ${linkInfo.label}`
+                                  : linkInfo.isDirect
+                                  ? `Suggested link: ${linkInfo.label} (unverified)`
+                                  : `Search on ${task.platform || "the web"}`
+                              }
                             >
                               <ExternalLink size={10} className="shrink-0" />
                               <span>{linkInfo.isDirect ? linkInfo.label : `${task.resource} · ${task.platform}`}</span>
                             </a>
-                            {linkInfo.isDirect && (
+                            {linkInfo.isCurated ? (
                               <span className="font-mono text-[9px] uppercase font-bold text-teal bg-teal/15 px-1.5 py-0.5 rounded-xs border border-teal/30">
-                                Verified Free
+                                Curated Free
                               </span>
-                            )}
+                            ) : linkInfo.isDirect ? (
+                              <span
+                                className="font-mono text-[9px] uppercase font-semibold text-ink/60 bg-ink/5 px-1.5 py-0.5 rounded-xs border border-ink/15"
+                                title="Suggested by AI — not verified"
+                              >
+                                Suggested Link
+                              </span>
+                            ) : null}
                           </div>
                         </div>
                       </div>
                       <span className="font-mono text-xs text-brass font-semibold shrink-0 flex items-center gap-1 bg-ink/5 px-2.5 py-1 rounded-sm">
-                        <Clock size={10} /> {task.estimated_hours}h
+                        <Clock size={10} /> {formattedHours}
                       </span>
                     </div>
                   );
@@ -442,14 +461,14 @@ export default function RoadmapTimeline({
                       {project.project_name}
                     </h5>
                     <span className="font-mono text-xs bg-ink/10 text-ink border border-ink/20 px-2.5 py-0.5 rounded-sm shrink-0">
-                      ~{project.estimated_days}d
+                      {project.estimated_days ? `~${project.estimated_days}d` : "Flexible"}
                     </span>
                   </div>
                   <p className="font-body text-xs text-ink/70 leading-relaxed">
                     {project.description}
                   </p>
                   <div className="flex flex-wrap gap-1.5 pt-1">
-                    {project.skills_demonstrated.map((sk, si) => (
+                    {(project.skills_demonstrated || []).map((sk, si) => (
                       <span
                         key={`proj-${idx}-sk-${si}`}
                         className="font-body text-[11px] bg-parchment border border-ink/15 text-ink/80 px-2 py-0.5 rounded-sm"

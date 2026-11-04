@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import json
 import logging
 import urllib.parse
@@ -74,19 +75,25 @@ async def run_market_agent(
     llm_config: Optional[LLMConfig] = None,
     use_cache: bool = True,
 ) -> dict:
+    cfg = llm_config or resolve_llm_config_from_values(x_gemini_api_key=api_key)
+
     # Step 0: Check 48-hour Supabase market cache to conserve Serper.dev + LLM quota
     if use_cache:
         cached = await get_cached_market_data(target_role, target_city, ttl_hours=48)
         if cached:
             logger.info("Market cache hit for '%s' in '%s' (<48h).", target_role, target_city)
-            return cached
+            res = dict(cached)
+            res["cache_hit"] = True
+            return res
 
     # Step 1: Fetch real-time job data concurrently via Serper.dev
     search_results = await search_pakistan_job_market(target_role, target_city)
+    has_live_results = any(
+        bool(entry.get("results")) for entry in search_results if isinstance(entry, dict)
+    )
     verified_job_links = _extract_verified_job_links(search_results)
 
     # Step 2: Pass to configured LLM for structured extraction
-    cfg = llm_config or resolve_llm_config_from_values(x_gemini_api_key=api_key)
     prompt = MARKET_USER_TEMPLATE.format(
         target_role=target_role,
         target_city=target_city,
@@ -95,4 +102,9 @@ async def run_market_agent(
     result = await call_llm_json(MARKET_SYSTEM_PROMPT, prompt, llm_config=cfg)
     if isinstance(result, dict):
         result["verified_job_links"] = verified_job_links
+        result["live_data_available"] = has_live_results
+        result["unverified"] = not has_live_results
+        result["source_mode"] = "byok" if cfg.is_byok else "server_default"
+        result["generated_at"] = datetime.now(timezone.utc).isoformat()
+        result["cache_hit"] = False
     return result

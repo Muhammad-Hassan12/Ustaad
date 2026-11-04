@@ -245,7 +245,14 @@ export default function Home() {
               <label className="font-mono text-xs font-semibold text-ink/80 uppercase tracking-wider">
                 1. Upload CV (PDF)
               </label>
-              <CVUpload file={file} onFileChange={setFile} />
+              <CVUpload
+                file={file}
+                onFileChange={(f) => {
+                  setFile(f);
+                  setError(null);
+                }}
+                onError={(err) => setError(err)}
+              />
             </div>
 
             <div className="border-t border-ink/10 pt-4 flex flex-col gap-4">

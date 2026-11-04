@@ -97,8 +97,9 @@ async def evaluate_answer(
         target_role=target_role,
         question=question,
         what_looking_for=what_looking_for,
-        candidate_answer=candidate_answer,
+        candidate_answer=f"<candidate_answer>\n{candidate_answer}\n</candidate_answer>",
         question_number=question_number,
         total_questions=total_questions,
     )
-    return await call_llm_json(ANSWER_EVAL_SYSTEM_PROMPT, prompt, llm_config=cfg)
+    # Low temperature (0.2) for deterministic, calibrated scoring and coaching
+    return await call_llm_json(ANSWER_EVAL_SYSTEM_PROMPT, prompt, llm_config=cfg, temperature=0.2)

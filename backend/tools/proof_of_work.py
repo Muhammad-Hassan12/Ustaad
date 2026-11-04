@@ -193,6 +193,47 @@ class _PortfolioHTMLParser(html.parser.HTMLParser):
             self._current_heading.append(data)
 
 
+async def _fetch_portfolio_body(current_url: str, headers: dict) -> tuple[Optional[int], str, Optional[str], str]:
+    hops = 0
+    status_code: Optional[int] = None
+    body_text = ""
+    non_html_type: Optional[str] = None
+    async with httpx.AsyncClient(timeout=3.5, follow_redirects=False, verify=True) as client:
+        while hops < 3:
+            hops += 1
+            async with client.stream("GET", current_url, headers=headers) as resp:
+                status_code = resp.status_code
+
+                if status_code in (301, 302, 303, 307, 308):
+                    loc = resp.headers.get("Location")
+                    if not loc:
+                        break
+                    next_url = urllib.parse.urljoin(current_url, loc)
+                    # Re-validate redirect target against SSRF before following!
+                    current_url = await asyncio.to_thread(validate_public_http_url, next_url)
+                    continue
+
+                content_type = (resp.headers.get("content-type") or "").lower()
+                if content_type and content_type.startswith(
+                    ("application/pdf", "image/", "video/", "audio/", "application/octet-stream", "application/zip")
+                ):
+                    non_html_type = content_type.split(";")[0].strip()
+                    break
+
+                # Stream and cap HTML response strictly at MAX_HTML_BYTES (512 KB)
+                content_chunks: list[bytes] = []
+                total = 0
+                async for chunk in resp.aiter_bytes():
+                    content_chunks.append(chunk)
+                    total += len(chunk)
+                    if total >= MAX_HTML_BYTES:
+                        break
+                raw_bytes = b"".join(content_chunks)[:MAX_HTML_BYTES]
+                body_text = raw_bytes.decode(resp.encoding or "utf-8", errors="replace")
+                break
+    return status_code, body_text, non_html_type, current_url
+
+
 async def inspect_portfolio_url(raw_url: str) -> dict:
     """
     Inspects a candidate portfolio URL with SSRF protection, manual redirect validation,
@@ -233,43 +274,31 @@ async def inspect_portfolio_url(raw_url: str) -> dict:
     status_code: Optional[int] = None
     body_text = ""
     non_html_type: Optional[str] = None
-    hops = 0
 
     try:
-        async with httpx.AsyncClient(timeout=4.0, follow_redirects=False, verify=True) as client:
-            while hops < 3:
-                hops += 1
-                async with client.stream("GET", current_url, headers=headers) as resp:
-                    status_code = resp.status_code
-
-                    if status_code in (301, 302, 303, 307, 308):
-                        loc = resp.headers.get("Location")
-                        if not loc:
-                            break
-                        next_url = urllib.parse.urljoin(current_url, loc)
-                        # Re-validate redirect target against SSRF before following!
-                        current_url = await asyncio.to_thread(validate_public_http_url, next_url)
-                        continue
-
-                    content_type = (resp.headers.get("content-type") or "").lower()
-                    if content_type and content_type.startswith(
-                        ("application/pdf", "image/", "video/", "audio/", "application/octet-stream", "application/zip")
-                    ):
-                        non_html_type = content_type.split(";")[0].strip()
-                        break
-
-                    # Stream and cap HTML response strictly at MAX_HTML_BYTES (512 KB)
-                    content_chunks: list[bytes] = []
-                    total = 0
-                    async for chunk in resp.aiter_bytes():
-                        content_chunks.append(chunk)
-                        total += len(chunk)
-                        if total >= MAX_HTML_BYTES:
-                            break
-                    raw_bytes = b"".join(content_chunks)[:MAX_HTML_BYTES]
-                    body_text = raw_bytes.decode(resp.encoding or "utf-8", errors="replace")
-                    break
-
+        status_code, body_text, non_html_type, current_url = await asyncio.wait_for(
+            _fetch_portfolio_body(current_url, headers),
+            timeout=4.0,
+        )
+    except (asyncio.TimeoutError, TimeoutError):
+        return {
+            "status": "unreachable",
+            "url": clean_target,
+            "canonical_url": clean_target,
+            "http_status": None,
+            "uses_https": clean_target.startswith("https://"),
+            "title": None,
+            "meta_description": None,
+            "og_image": None,
+            "has_open_graph": False,
+            "is_empty_spa_shell": False,
+            "has_github_link": False,
+            "has_linkedin_link": False,
+            "has_contact_cta": False,
+            "headings": [],
+            "headings_sample": [],
+            "audit_findings": ["Portfolio audit timed out (4.0s limit exceeded)."],
+        }
     except ValueError as e:
         return {
             "status": "blocked_url",

@@ -248,6 +248,7 @@ export function loadBYOKState(): BYOKStorageState {
         },
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      localStorage.removeItem(LEGACY_GEMINI_KEY);
       return migrated;
     }
   } catch (err) {
@@ -261,11 +262,11 @@ export function saveBYOKState(state: BYOKStorageState): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 
-  // Keep legacy key cleaned or synced for Gemini compatibility
-  if (state.mode === "byok" && state.activeProvider === "gemini" && state.profiles.gemini?.apiKey) {
-    localStorage.setItem(LEGACY_GEMINI_KEY, state.profiles.gemini.apiKey);
-  } else {
+  // Clean up legacy key so sensitive keys are never duplicated across storage slots
+  try {
     localStorage.removeItem(LEGACY_GEMINI_KEY);
+  } catch {
+    // Ignore storage errors
   }
 
   window.dispatchEvent(new Event(BYOK_UPDATED_EVENT));

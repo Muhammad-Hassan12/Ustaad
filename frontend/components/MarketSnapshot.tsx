@@ -11,6 +11,7 @@ import {
   Copy,
   Check,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import AnimatedCounter from "./AnimatedCounter";
 
@@ -39,6 +40,9 @@ interface MarketSnapshotProps {
     raw_job_listings?: JobListing[];
     verified_job_links?: VerifiedJobLink[];
     market_summary: string;
+    live_data_available?: boolean;
+    unverified?: boolean;
+    cache_hit?: boolean;
   } | null;
 }
 
@@ -135,10 +139,30 @@ export default function MarketSnapshot({ data }: MarketSnapshotProps) {
         <h3 className="font-display text-2xl text-ink flex items-center gap-2.5">
           <Briefcase className="w-5 h-5 text-teal" /> Market Intelligence
         </h3>
-        <span className="font-mono text-xs font-semibold bg-brass/20 text-ink border border-brass/40 px-3 py-1 rounded-sm">
-          {data.market_demand_level} Demand
-        </span>
+        <div className="flex items-center gap-2">
+          {data.cache_hit && (
+            <span
+              className="font-mono text-[11px] font-semibold bg-ink/5 text-ink/70 border border-ink/20 px-2.5 py-1 rounded-sm"
+              title="Re-used recent Pakistani market research"
+            >
+              Cached Intel
+            </span>
+          )}
+          <span className="font-mono text-xs font-semibold bg-brass/20 text-ink border border-brass/40 px-3 py-1 rounded-sm">
+            {data.market_demand_level} Demand
+          </span>
+        </div>
       </div>
+
+      {/* Unverified / Offline Warning Banner */}
+      {(data.live_data_available === false || data.unverified === true) && (
+        <div className="p-3.5 rounded-sm bg-amber-500/10 border-l-4 border-amber-600 text-ink text-xs font-body flex items-start gap-2.5">
+          <AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+          <span>
+            No live job-board data was available for this run — figures below are unverified AI estimates.
+          </span>
+        </div>
+      )}
 
       {/* Key Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-ink/5 p-6 rounded-sm border border-ink/10">

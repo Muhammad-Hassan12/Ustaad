@@ -3,31 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, History, ArrowRight, Clock, Trash2 } from "lucide-react";
-
-interface RecentSession {
-  id: string;
-  role: string;
-  city: string;
-  timestamp: number;
-}
+import {
+  RecentSession,
+  loadRecentSessions,
+  clearRecentSessions,
+  isValidSessionId,
+} from "@/lib/recentSessions";
 
 interface ResumeSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-function readStoredRecentSessions(): RecentSession[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = localStorage.getItem("ustaad_recent_sessions");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) return parsed as RecentSession[];
-    }
-  } catch (err) {
-    console.error("Failed to parse recent sessions:", err);
-  }
-  return [];
 }
 
 export default function ResumeSessionModal({ isOpen, onClose }: ResumeSessionModalProps) {
@@ -38,7 +23,7 @@ export default function ResumeSessionModal({ isOpen, onClose }: ResumeSessionMod
 function ResumeSessionModalContent({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [sessionIdInput, setSessionIdInput] = useState("");
-  const [recentSessions, setRecentSessions] = useState<RecentSession[]>(readStoredRecentSessions);
+  const [recentSessions, setRecentSessions] = useState<RecentSession[]>(loadRecentSessions);
   const [now] = useState(() => Date.now());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -51,8 +36,7 @@ function ResumeSessionModalContent({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(idToLoad)) {
+    if (!isValidSessionId(idToLoad)) {
       setErrorMsg("Invalid Session ID format. Session IDs look like: 9b1deb4d-3b7d-4b69-9672-2e1609870123");
       return;
     }
@@ -62,7 +46,7 @@ function ResumeSessionModalContent({ onClose }: { onClose: () => void }) {
   };
 
   const handleClearHistory = () => {
-    localStorage.removeItem("ustaad_recent_sessions");
+    clearRecentSessions();
     setRecentSessions([]);
   };
 

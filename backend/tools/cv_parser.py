@@ -1,10 +1,13 @@
 import re
 import urllib.parse
+from typing import Optional
 
 try:
     import pymupdf as fitz  # PyMuPDF 2.x+
 except ImportError:
     import fitz  # PyMuPDF 1.x fallback
+
+import settings
 
 
 class CVParseError(Exception):
@@ -13,28 +16,41 @@ class CVParseError(Exception):
 
 
 def extract_cv_text(pdf_bytes: bytes) -> str:
-    """Extract all text from a PDF CV given its raw bytes."""
+    """Extract all text from a PDF CV given its raw bytes, capped by page count and size."""
     if not pdf_bytes or len(pdf_bytes) < 10:
         raise CVParseError("The uploaded file is empty or too small to be a valid PDF.")
-    
+
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception:
         raise CVParseError("The uploaded file is not a valid PDF. Please upload a .pdf file.")
-    
+
     try:
+        if doc.page_count > settings.MAX_CV_PAGES:
+            raise CVParseError(
+                f"CV has {doc.page_count} pages, which exceeds the maximum limit of {settings.MAX_CV_PAGES} pages. "
+                "Please upload a concise 1-3 page resume."
+            )
+
         full_text = ""
         for page in doc:
             full_text += page.get_text()
+    except CVParseError:
+        raise
     except Exception as e:
         raise CVParseError(f"Failed to read content from the PDF: {str(e)}")
     finally:
         doc.close()
-    
+
     text = full_text.strip()
     if len(text) < 50:
-        raise CVParseError("Could not extract enough text from the PDF. Is it a scanned image? Please use a text-based PDF.")
-    
+        raise CVParseError(
+            "Could not extract enough text from the PDF. Is it a scanned image? Please use a text-based PDF."
+        )
+
+    if len(text) > settings.MAX_CV_CHARS:
+        text = text[: settings.MAX_CV_CHARS]
+
     return text
 
 
@@ -136,3 +152,33 @@ def extract_cv_links(pdf_bytes: bytes, cv_text: str = "") -> dict:
         "portfolio_url": portfolio_url,
     }
 
+
+def extract_cv_contact(cv_text: str) -> dict:
+    """
+    Safely extract candidate contact handles from CV text for the printable resume view.
+    Never returns entire cv_text to the browser.
+    """
+    email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", cv_text or "")
+    phone_match = re.search(r"(?:\+92[\s-]*\d|03\d)[\d\s-]{6,12}\d", cv_text or "")
+    linkedin_match = re.search(r"(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+", cv_text or "", re.IGNORECASE)
+    github_match = re.search(r"(?:https?:\/\/)?(?:www\.)?github\.com\/[A-Za-z0-9_.-]+", cv_text or "", re.IGNORECASE)
+
+    email = email_match.group(0).strip() if email_match else None
+    phone = phone_match.group(0).strip() if phone_match else None
+    linkedin = (
+        re.sub(r"^https?:\/\/(www\.)?", "", linkedin_match.group(0)).strip()
+        if linkedin_match
+        else None
+    )
+    github = (
+        re.sub(r"^https?:\/\/(www\.)?", "", github_match.group(0)).strip()
+        if github_match
+        else None
+    )
+
+    return {
+        "email": email,
+        "phone": phone,
+        "linkedin": linkedin,
+        "github": github,
+    }

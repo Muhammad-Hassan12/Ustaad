@@ -425,7 +425,7 @@ export default function AboutPage() {
               How does Multi-Provider Bring Your Own Key (BYOK) work?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Out of the box, Ustaad runs completely free on Google&apos;s shared Gemini 3.1 Flash Lite tier. During peak student traffic, shared daily requests can run tight — or you may want to test frontier reasoning models on your CV.
+              Out of the box, Ustaad runs completely free on Google&apos;s shared Gemini tier. During peak student traffic, shared daily requests can run tight — or you may want to test frontier reasoning models on your CV.
             </p>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
               With BYOK mode, you can connect a free key from{" "}
@@ -446,7 +446,7 @@ export default function AboutPage() {
               >
                 Groq
               </a>
-              , or bring keys from OpenAI (ChatGPT), Anthropic (Claude), DeepSeek, Alibaba Qwen, Zhipu GLM, or OpenRouter — including custom model IDs. Keys live strictly in your browser&apos;s localStorage and are never stored in any database.
+              , or bring keys from OpenAI (ChatGPT), Anthropic (Claude), DeepSeek, Alibaba Qwen, Zhipu GLM, or OpenRouter — including custom model IDs. Keys live strictly in your browser&apos;s localStorage and are never stored in any database. BYOK requests always run directly through your chosen provider and never failover to secondary models.
             </p>
           </div>
 
@@ -455,7 +455,10 @@ export default function AboutPage() {
               Is my CV or data stored anywhere?
             </h3>
             <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
-              Your CV text and analysis results are stored in Supabase, tied to your unique session link. Anyone with that exact link can view your dashboard, interview, and dossier — treat it like a private link and don&apos;t share it publicly. There&apos;s no account or sign-in; the link itself is your access. This data is never used to train any AI model or shared with third parties.
+              Your parsed CV text and agent outputs are stored server-side in Supabase under an unguessable 128-bit UUID session link until retention expiry (sessions older than 30 days are automatically purged). Anyone with that exact link can view your dashboard, mock interview, and dossier — treat it like a private access token and do not post it publicly. Session pages are configured with strict <code>robots: noindex, nofollow</code> headers so search engines will never index your results.
+            </p>
+            <p className="font-body text-xs sm:text-sm text-warm-gray leading-relaxed">
+              Your data is never used to train foundational AI models, sold, or shared with third-party advertisers. On the shared server-default tier, requests may failover to an operator-configured secondary model if primary API rate limits occur; BYOK requests never do.
             </p>
           </div>
 

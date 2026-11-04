@@ -5,4 +5,7 @@ __pycache__/
 .pytest_cache/
 .env
 *.pdf
-
+scripts/
+test_*.py
+pytest.ini
+requirements-dev.txt

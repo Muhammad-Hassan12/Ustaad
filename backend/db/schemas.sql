@@ -1,6 +1,13 @@
--- This sets up the tables needed for the Ustaad Career OS pipeline.
+-- Ustaad Career OS: PostgreSQL schema for Supabase
+--
+-- Security model:
+--   All queries originate from the FastAPI backend using SUPABASE_SERVICE_KEY,
+--   which bypasses Row Level Security (RLS) in PostgreSQL.
+--   Enabling RLS on these tables with NO public policies ensures that direct
+--   PostgREST requests using the project's anonymous key (SUPABASE_ANON_KEY)
+--   are rejected by default, preventing unauthorized exposure of candidate CVs.
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   status TEXT DEFAULT 'pending',
@@ -24,7 +31,7 @@ CREATE TABLE sessions (
   error_message TEXT
 );
 
-CREATE TABLE interview_sessions (
+CREATE TABLE IF NOT EXISTS interview_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
   questions JSONB,
@@ -36,7 +43,6 @@ CREATE TABLE interview_sessions (
 );
 
 -- Quota tracker for server-default shared key usage monitoring
--- report remaining capacity across server restarts.
 CREATE TABLE IF NOT EXISTS quota_tracker (
   id INT PRIMARY KEY DEFAULT 1,
   reset_date DATE DEFAULT CURRENT_DATE,
@@ -49,10 +55,9 @@ VALUES (1, CURRENT_DATE, 0)
 ON CONFLICT (id) DO NOTHING;
 
 -- Row Level Security Setup
+-- Enabling RLS without granting policies to the anon role protects against
+-- anonymous data exfiltration via PostgREST. The backend's service-role key
+-- automatically bypasses RLS.
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interview_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quota_tracker ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all" ON sessions FOR ALL USING (true);
-CREATE POLICY "Allow all" ON interview_sessions FOR ALL USING (true);
-CREATE POLICY "Allow all" ON quota_tracker FOR ALL USING (true);

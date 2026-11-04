@@ -10,6 +10,7 @@ from agents.interview_agent import (
 )
 from agents.llm import LLMConfig, redact_secrets, resolve_llm_config
 from db.supabase_client import get_session, supabase
+from security import interview_call_limit, enforce_server_interview_quota
 
 router = APIRouter(prefix="/api/interview")
 
@@ -115,7 +116,7 @@ async def get_active_interview(session_id: str):
     return {"exists": True, **_format_interview_state(interview)}
 
 
-@router.post("/start/{session_id}")
+@router.post("/start/{session_id}", dependencies=[Depends(interview_call_limit)])
 async def start_interview(
     session_id: str,
     payload: Optional[StartInterviewPayload] = Body(default=None),
@@ -141,6 +142,9 @@ async def start_interview(
             state = _format_interview_state(existing)
             if not state["is_complete"] and state["current_question"]:
                 return {"resumed": True, **state}
+
+    # Enforce shared server daily interview budget
+    enforce_server_interview_quota(llm_config.is_byok)
 
     profile_data = session.get("profile_data") or {}
     market_data = session.get("market_data") or {}
@@ -172,15 +176,18 @@ async def start_interview(
     return {"resumed": False, **_format_interview_state(inserted)}
 
 
-@router.post("/answer")
+@router.post("/answer", dependencies=[Depends(interview_call_limit)])
 async def submit_answer(
     payload: AnswerPayload,
     llm_config: LLMConfig = Depends(resolve_llm_config),
 ):
     if len(payload.answer) > MAX_ANSWER_LENGTH:
-        return {"error": f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters."}
+        raise HTTPException(
+            status_code=400,
+            detail=f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters.",
+        )
     if not payload.answer.strip():
-        return {"error": "Answer cannot be empty."}
+        raise HTTPException(status_code=400, detail="Answer cannot be empty.")
 
     session = await get_session(payload.session_id)
     if not session:
@@ -190,13 +197,13 @@ async def submit_answer(
     interview = await asyncio.to_thread(_get_interview_by_id_sync, payload.interview_id)
     if not interview:
         raise HTTPException(status_code=404, detail="Interview session not found.")
-    if interview.get("session_id") != payload.session_id:
+    if str(interview.get("session_id")) != str(payload.session_id):
         raise HTTPException(status_code=400, detail="Interview session does not match session_id.")
 
     questions_data = interview.get("questions") or {}
     all_questions = _flatten_questions(questions_data)
     if not all_questions:
-        return {"error": "No interview questions available in this session."}
+        raise HTTPException(status_code=400, detail="No interview questions available in this session.")
 
     current_index = interview.get("current_question_index") or 0
     if current_index >= len(all_questions):
@@ -210,6 +217,16 @@ async def submit_answer(
 
     current_q = all_questions[current_index]
 
+    # Stale submission or double-click race condition guard
+    if current_q.get("id") and payload.question_id and str(payload.question_id) != str(current_q.get("id")):
+        raise HTTPException(
+            status_code=409,
+            detail="Question already submitted or submission out of sequence. Please refresh.",
+        )
+
+    # Enforce shared server daily interview budget
+    enforce_server_interview_quota(llm_config.is_byok)
+
     try:
         evaluation = await evaluate_answer(
             target_role=target_role,
@@ -221,7 +238,10 @@ async def submit_answer(
             llm_config=llm_config,
         )
     except Exception as e:
-        return {"error": redact_secrets(str(e), llm_config.api_key)}
+        raise HTTPException(
+            status_code=502,
+            detail=redact_secrets(str(e), llm_config.api_key),
+        )
 
     answers = list(interview.get("answers") or [])
     scores = list(interview.get("scores") or [])
@@ -274,17 +294,20 @@ async def submit_answer(
     }
 
 
-@router.post("/probe")
+@router.post("/probe", dependencies=[Depends(interview_call_limit)])
 async def submit_probe(
     payload: ProbePayload,
     llm_config: LLMConfig = Depends(resolve_llm_config),
 ):
     if len(payload.answer) > MAX_ANSWER_LENGTH:
-        return {"error": f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters."}
+        raise HTTPException(
+            status_code=400,
+            detail=f"Answer is too long. Maximum {MAX_ANSWER_LENGTH} characters.",
+        )
     if not payload.answer.strip():
-        return {"error": "Answer cannot be empty."}
+        raise HTTPException(status_code=400, detail="Answer cannot be empty.")
     if not payload.probe_question.strip():
-        return {"error": "Probe question cannot be empty."}
+        raise HTTPException(status_code=400, detail="Probe question cannot be empty.")
 
     session = await get_session(payload.session_id)
     if not session:
@@ -294,13 +317,16 @@ async def submit_probe(
     interview = await asyncio.to_thread(_get_interview_by_id_sync, payload.interview_id)
     if not interview:
         raise HTTPException(status_code=404, detail="Interview session not found.")
-    if interview.get("session_id") != payload.session_id:
+    if str(interview.get("session_id")) != str(payload.session_id):
         raise HTTPException(status_code=400, detail="Interview session does not match session_id.")
 
     questions_data = interview.get("questions") or {}
     all_questions = _flatten_questions(questions_data)
     total_q = len(all_questions) if all_questions else 5
     current_index = interview.get("current_question_index") or 1
+
+    # Enforce shared server daily interview budget
+    enforce_server_interview_quota(llm_config.is_byok)
 
     try:
         evaluation = await evaluate_answer(
@@ -313,7 +339,10 @@ async def submit_probe(
             llm_config=llm_config,
         )
     except Exception as e:
-        return {"error": redact_secrets(str(e), llm_config.api_key)}
+        raise HTTPException(
+            status_code=502,
+            detail=redact_secrets(str(e), llm_config.api_key),
+        )
 
     # Attach probe to matching score without altering question progression or total counts
     scores = list(interview.get("scores") or [])
@@ -385,5 +414,5 @@ async def finish_interview_early(interview_id: str):
 async def get_interview_summary(session_id: str):
     interview = await asyncio.to_thread(_get_latest_interview_for_session_sync, session_id)
     if not interview:
-        return {"error": "No interview found for this session"}
+        raise HTTPException(status_code=404, detail="No interview session found for this session.")
     return interview

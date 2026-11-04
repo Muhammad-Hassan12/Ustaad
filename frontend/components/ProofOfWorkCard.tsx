@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Globe,
   ExternalLink,
@@ -103,6 +104,23 @@ export interface ProofOfWorkProps {
   };
 }
 
+function getValidGithubAvatarUrl(rawUrl?: string | null): string | null {
+  if (!rawUrl) return null;
+  try {
+    const parsed = new URL(rawUrl);
+    if (
+      parsed.protocol === "https:" &&
+      (parsed.hostname === "avatars.githubusercontent.com" ||
+        parsed.hostname === "github.com")
+    ) {
+      return parsed.toString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export default function ProofOfWorkCard({ data }: ProofOfWorkProps) {
   const { github, portfolio, audit_findings = [], source } = data || {};
 
@@ -112,6 +130,7 @@ export default function ProofOfWorkCard({ data }: ProofOfWorkProps) {
 
   const isCVSource = source !== "manual_input";
   const githubProfileLink = github?.profile_url || github?.html_url || null;
+  const safeAvatarUrl = getValidGithubAvatarUrl(github?.avatar_url);
 
   return (
     <div className="bg-parchment text-ink border border-brass/40 rounded-sm p-6 sm:p-7 relative shadow-md paper-grain flex flex-col gap-6">
@@ -172,12 +191,13 @@ export default function ProofOfWorkCard({ data }: ProofOfWorkProps) {
               <>
                 {/* User Snapshot */}
                 <div className="flex items-start gap-3">
-                  {github.avatar_url && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={github.avatar_url}
-                      alt={github.username}
-                      className="w-11 h-11 rounded-sm border border-ink/20 shrink-0"
+                  {safeAvatarUrl && (
+                    <Image
+                      src={safeAvatarUrl}
+                      alt={github.username || "GitHub avatar"}
+                      width={44}
+                      height={44}
+                      className="w-11 h-11 rounded-sm border border-ink/20 shrink-0 object-cover"
                     />
                   )}
                   <div className="flex flex-col min-w-0">

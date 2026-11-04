@@ -1,23 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, CheckCircle2, FileText, RefreshCw } from "lucide-react";
+import { UploadCloud, CheckCircle2, FileText, RefreshCw, AlertCircle } from "lucide-react";
 
 interface CVUploadProps {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  onError?: (message: string) => void;
 }
 
-export default function CVUpload({ file, onFileChange }: CVUploadProps) {
+export default function CVUpload({ file, onFileChange, onError }: CVUploadProps) {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
+      setErrorMessage(null);
       if (acceptedFiles && acceptedFiles[0]) {
         onFileChange(acceptedFiles[0]);
       }
     },
+    onDropRejected: (fileRejections) => {
+      const rejection = fileRejections[0];
+      if (!rejection) return;
+      const errorCode = rejection.errors[0]?.code;
+      let msg = "Invalid file upload.";
+      if (errorCode === "file-too-large") {
+        msg = "File exceeds the 5MB maximum limit. Please upload a smaller PDF.";
+      } else if (errorCode === "file-invalid-type") {
+        msg = "Invalid file type. Only PDF documents are supported.";
+      } else if (errorCode === "too-many-files") {
+        msg = "Please upload only one PDF file.";
+      } else if (rejection.errors[0]?.message) {
+        msg = rejection.errors[0].message;
+      }
+      setErrorMessage(msg);
+      onError?.(msg);
+    },
     accept: {
       "application/pdf": [".pdf"],
     },
+    maxSize: 5 * 1024 * 1024, // 5MB
     maxFiles: 1,
     multiple: false,
   });
@@ -26,7 +49,9 @@ export default function CVUpload({ file, onFileChange }: CVUploadProps) {
     <div
       {...getRootProps()}
       className={`border-2 border-dashed rounded-sm p-8 text-center cursor-pointer transition-all duration-300 ${
-        isDragActive
+        errorMessage
+          ? "border-rose-400 bg-rose-50/20"
+          : isDragActive
           ? "border-brass bg-brass/10"
           : file
           ? "border-teal bg-teal/5"
@@ -74,6 +99,12 @@ export default function CVUpload({ file, onFileChange }: CVUploadProps) {
               <p className="font-mono text-xs text-ink/60 mt-1">
                 Supports PDF format · Up to 5MB
               </p>
+              {errorMessage && (
+                <p className="font-mono text-xs text-rose-600 flex items-center justify-center gap-1 mt-2">
+                  <AlertCircle size={13} className="shrink-0" />
+                  <span>{errorMessage}</span>
+                </p>
+              )}
             </div>
           </div>
         )}

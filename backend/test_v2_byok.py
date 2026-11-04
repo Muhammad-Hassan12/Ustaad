@@ -434,6 +434,41 @@ class TestUstaadV2Async(unittest.IsolatedAsyncioTestCase):
                                     self.assertIn("Docker", delta["resolved_gaps"])
                                     self.assertNotIn("Kubernetes", delta["resolved_gaps"])
 
+    async def test_pipeline_contact_and_results_projection(self):
+        client = TestClient(app)
+        mock_raw_session = {
+            "id": "sess_secret_1",
+            "candidate_name": "Alice",
+            "cv_text": "Alice Smith | alice@example.com | 03001234567 | github.com/alice",
+            "target_role": "Backend Engineer",
+            "target_city": "Karachi",
+            "profile_data": {"name": "Alice"},
+        }
+        mock_public_session = {
+            "id": "sess_secret_1",
+            "candidate_name": "Alice",
+            "target_role": "Backend Engineer",
+            "target_city": "Karachi",
+            "profile_data": {"name": "Alice"},
+        }
+
+        # 1. Contact endpoint extracts handles without returning full CV text
+        with patch("routers.pipeline.get_session", AsyncMock(return_value=mock_raw_session)):
+            res_contact = client.get("/api/pipeline/contact/sess_secret_1")
+            self.assertEqual(res_contact.status_code, 200)
+            contact_data = res_contact.json()
+            self.assertEqual(contact_data["email"], "alice@example.com")
+            self.assertEqual(contact_data["phone"], "03001234567")
+            self.assertEqual(contact_data["github"], "github.com/alice")
+
+        # 2. Results endpoint excludes cv_text
+        with patch("routers.pipeline.get_public_session", AsyncMock(return_value=mock_public_session)):
+            res_pub = client.get("/api/pipeline/results/sess_secret_1")
+            self.assertEqual(res_pub.status_code, 200)
+            pub_data = res_pub.json()
+            self.assertNotIn("cv_text", pub_data)
+            self.assertEqual(pub_data["candidate_name"], "Alice")
+
 
 class TestUstaadV2Sync(unittest.TestCase):
     def test_secret_redaction_and_parsers(self):
@@ -561,6 +596,26 @@ class TestUstaadV2Sync(unittest.TestCase):
         gh_pages = extract_cv_links(b"", "Site: https://johndoe.github.io and github.com/johndoe/app")
         self.assertEqual(gh_pages["portfolio_url"], "https://johndoe.github.io")
         self.assertEqual(gh_pages["github_username"], "johndoe")
+
+    def test_cv_contact_extraction_helper(self):
+        from tools.cv_parser import extract_cv_contact
+        text = "Syed Hassan | +92 300 1234567 | hassan@example.com | linkedin.com/in/hassan | github.com/hassan"
+        contact = extract_cv_contact(text)
+        self.assertEqual(contact["email"], "hassan@example.com")
+        self.assertEqual(contact["phone"], "+92 300 1234567")
+        self.assertEqual(contact["linkedin"], "linkedin.com/in/hassan")
+        self.assertEqual(contact["github"], "github.com/hassan")
+
+    def test_market_cache_like_escaping(self):
+        from db.supabase_client import _escape_like, _is_cacheable_market
+        from datetime import datetime, timezone, timedelta
+        self.assertEqual(_escape_like("100% Remote_Dev*"), "100\\% Remote\\_Dev\\*")
+
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+        # Unverified / non-server-default / missing skills must not be cached
+        self.assertFalse(_is_cacheable_market({"unverified": True}, cutoff))
+        self.assertFalse(_is_cacheable_market({"live_data_available": False}, cutoff))
+        self.assertFalse(_is_cacheable_market({"source_mode": "byok"}, cutoff))
 
 
 if __name__ == "__main__":

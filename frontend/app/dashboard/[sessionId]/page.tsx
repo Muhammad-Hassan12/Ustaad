@@ -10,6 +10,7 @@ import CVComparison from "@/components/CVComparison";
 import ProofOfWorkCard from "@/components/ProofOfWorkCard";
 import { subscribeToPipeline } from "@/lib/sse";
 import { getPipelineResults, getDossierUrl, reauditPipeline } from "@/lib/api";
+import { saveRecentSession } from "@/lib/recentSessions";
 import {
   MessageSquare,
   Download,
@@ -75,7 +76,6 @@ interface SessionData {
   gap_data?: Parameters<typeof GapReport>[0]["data"];
   roadmap_data?: Parameters<typeof RoadmapTimeline>[0]["data"];
   cv_rewrite_data?: Parameters<typeof CVComparison>[0]["data"];
-  cv_text?: string;
   [key: string]: unknown;
 }
 
@@ -150,22 +150,7 @@ export default function DashboardPage() {
   const saveToRecentSessions = useCallback(
     (role?: string, city?: string) => {
       if (typeof window === "undefined" || !sessionId) return;
-      try {
-        const stored = localStorage.getItem("ustaad_recent_sessions");
-        let list: Array<{ id: string; role: string; city: string; timestamp: number }> = stored
-          ? JSON.parse(stored)
-          : [];
-        list = list.filter((s) => s.id !== sessionId);
-        list.unshift({
-          id: sessionId,
-          role: role || "Career Analysis",
-          city: city || "Pakistan",
-          timestamp: Date.now(),
-        });
-        localStorage.setItem("ustaad_recent_sessions", JSON.stringify(list.slice(0, 10)));
-      } catch (e) {
-        console.error("Failed to save recent session:", e);
-      }
+      saveRecentSession({ id: sessionId, role, city });
     },
     [sessionId]
   );
@@ -848,6 +833,11 @@ export default function DashboardPage() {
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) {
+                      if (f.size > 5 * 1024 * 1024) {
+                        setReauditError("File exceeds the 5MB maximum limit. Please upload a smaller PDF.");
+                        setReauditFile(null);
+                        return;
+                      }
                       setReauditFile(f);
                       setReauditError(null);
                     }

@@ -1,7 +1,7 @@
 /**
  * Ustaad Resource Link Resolver & .ics Calendar Generator
  * 
- * Provides guaranteed-working zero-404 learning resource links and
+ * Provides deterministic learning resource links and
  * an RFC 5545 calendar (.ics) schedule export for 30/60/90-day roadmaps.
  */
 
@@ -9,6 +9,7 @@ export interface ResolvedResourceLink {
   url: string;
   label: string;
   isDirect: boolean;
+  isCurated: boolean;
 }
 
 export interface TaskDetail {
@@ -59,132 +60,132 @@ const CANONICAL_DIRECT_COURSES: Array<{
   {
     matcher: (r) => r.includes("cs50x") || r === "cs50",
     url: "https://cs50.harvard.edu/x/",
-    label: "CS50x Computer Science",
+    label: "CS50 Computer Science (Harvard)",
   },
-  // Full Stack Open
+  // Full Stack Open (University of Helsinki)
   {
-    matcher: (r) => r.includes("full stack open") || r.includes("fullstack open"),
+    matcher: (r, p) => r.includes("full stack open") || p.includes("helsinki"),
     url: "https://fullstackopen.com/en/",
     label: "Full Stack Open (Univ. of Helsinki)",
   },
-  // SQLBolt & SQL Practice
+  // SQL
   {
-    matcher: (r) => r.includes("sqlbolt"),
+    matcher: (r) => r.includes("sqlbolt") || r.includes("sql bolt"),
     url: "https://sqlbolt.com/",
     label: "SQLBolt Interactive Lessons",
   },
-  // NeetCode & DSA
+  // LeetCode / Algorithms practice
   {
     matcher: (r) => r.includes("neetcode"),
     url: "https://neetcode.io/practice",
-    label: "NeetCode Roadmap & Practice",
+    label: "NeetCode Practice",
   },
-  // System Design Primer
+  // System Design
   {
-    matcher: (r) => r.includes("system design primer"),
+    matcher: (r) => r.includes("system design primer") || r.includes("system-design-primer"),
     url: "https://github.com/donnemartin/system-design-primer",
-    label: "System Design Primer",
+    label: "System Design Primer (GitHub)",
   },
   // Fast.ai
   {
-    matcher: (r) => r.includes("fast.ai") || r.includes("fastai") || r.includes("practical deep learning"),
+    matcher: (r, p) => r.includes("fast.ai") || p.includes("fast.ai") || r.includes("practical deep learning"),
     url: "https://course.fast.ai/",
     label: "Practical Deep Learning (fast.ai)",
   },
   // The Odin Project
   {
-    matcher: (r) => r.includes("odin project"),
+    matcher: (r, p) => r.includes("odin project") || p.includes("odin"),
     url: "https://www.theodinproject.com/",
-    label: "The Odin Project Curriculum",
+    label: "The Odin Project",
   },
-  // roadmap.sh
+  // Roadmap.sh
   {
-    matcher: (r) => r.includes("roadmap.sh"),
+    matcher: (r, p) => r.includes("roadmap.sh") || p.includes("roadmap.sh"),
     url: "https://roadmap.sh/",
     label: "Developer Roadmaps (roadmap.sh)",
   },
-  // Learn Git Branching
+  // Git
   {
-    matcher: (r) => r.includes("learngitbranching") || (r.includes("git") && r.includes("branching")),
+    matcher: (r) => r.includes("learngitbranching") || r.includes("learn git branching"),
     url: "https://learngitbranching.js.org/",
-    label: "Learn Git Branching Interactive",
+    label: "Learn Git Branching",
   },
-  // Docker Curriculum
+  // Docker
   {
-    matcher: (r) => r.includes("docker") && (r.includes("curriculum") || r.includes("get started")),
+    matcher: (r) => r.includes("docker curriculum") || r.includes("docker-curriculum"),
     url: "https://docker-curriculum.com/",
-    label: "Docker Curriculum for Beginners",
+    label: "Docker for Beginners",
   },
-  // FastAPI Docs
+  // FastAPI
   {
-    matcher: (r) => r.includes("fastapi") && (r.includes("docs") || r.includes("tutorial")),
+    matcher: (r) => r.includes("fastapi tutorial") || r.includes("fastapi docs"),
     url: "https://fastapi.tiangolo.com/tutorial/",
     label: "FastAPI Official Tutorial",
   },
-  // Next.js Learn
+  // Next.js
   {
-    matcher: (r) => (r.includes("nextjs") || r.includes("next.js")) && (r.includes("learn") || r.includes("docs") || r.includes("dashboard")),
+    matcher: (r) => r.includes("next.js learn") || r.includes("nextjs learn"),
     url: "https://nextjs.org/learn",
-    label: "Next.js Official Learn Course",
+    label: "Learn Next.js (Official)",
   },
-  // React.dev Learn
+  // React
   {
-    matcher: (r) => r.includes("react") && (r.includes("docs") || r.includes("learn")),
+    matcher: (r) => r.includes("react dev") || r.includes("react.dev"),
     url: "https://react.dev/learn",
-    label: "React Official Documentation",
+    label: "React Official Docs (react.dev)",
   },
-  // Kaggle Learn Courses
+  // Kaggle micro-courses
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("python"),
+    matcher: (r) => r.includes("kaggle python"),
     url: "https://www.kaggle.com/learn/python",
-    label: "Kaggle Learn: Python",
+    label: "Kaggle Python Course",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("pandas"),
+    matcher: (r) => r.includes("kaggle pandas"),
     url: "https://www.kaggle.com/learn/pandas",
-    label: "Kaggle Learn: Pandas",
+    label: "Kaggle Pandas Course",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("sql"),
+    matcher: (r) => r.includes("kaggle sql"),
     url: "https://www.kaggle.com/learn/intro-to-sql",
-    label: "Kaggle Learn: Intro to SQL",
+    label: "Kaggle SQL Course",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && (r.includes("intro to ml") || r.includes("intro to machine learning") || (r.includes("machine learning") && !r.includes("intermediate"))),
+    matcher: (r) => r.includes("kaggle intro to machine learning") || r.includes("kaggle ml"),
     url: "https://www.kaggle.com/learn/intro-to-machine-learning",
-    label: "Kaggle: Intro to Machine Learning",
+    label: "Kaggle Intro to ML",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("intermediate machine learning"),
+    matcher: (r) => r.includes("kaggle intermediate machine learning"),
     url: "https://www.kaggle.com/learn/intermediate-machine-learning",
-    label: "Kaggle: Intermediate ML",
+    label: "Kaggle Intermediate ML",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("feature engineering"),
+    matcher: (r) => r.includes("kaggle feature engineering"),
     url: "https://www.kaggle.com/learn/feature-engineering",
-    label: "Kaggle: Feature Engineering",
+    label: "Kaggle Feature Engineering",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && (r.includes("deep learning") || r.includes("intro to dl")),
+    matcher: (r) => r.includes("kaggle deep learning"),
     url: "https://www.kaggle.com/learn/intro-to-deep-learning",
-    label: "Kaggle: Intro to Deep Learning",
+    label: "Kaggle Deep Learning",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("computer vision"),
+    matcher: (r) => r.includes("kaggle computer vision"),
     url: "https://www.kaggle.com/learn/computer-vision",
-    label: "Kaggle: Computer Vision",
+    label: "Kaggle Computer Vision",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("time series"),
+    matcher: (r) => r.includes("kaggle time series"),
     url: "https://www.kaggle.com/learn/time-series",
-    label: "Kaggle: Time Series",
+    label: "Kaggle Time Series",
   },
   {
-    matcher: (r, p) => (p.includes("kaggle") || r.includes("kaggle")) && r.includes("data visualization"),
+    matcher: (r) => r.includes("kaggle data visualization"),
     url: "https://www.kaggle.com/learn/data-visualization",
-    label: "Kaggle: Data Visualization",
+    label: "Kaggle Data Visualization",
   },
-  // Additional high-frequency resources
+  // JavaScript
   {
     matcher: (r) => r.includes("javascript30") || r.includes("javascript 30"),
     url: "https://javascript30.com/",
@@ -195,6 +196,7 @@ const CANONICAL_DIRECT_COURSES: Array<{
     url: "https://eloquentjavascript.net/",
     label: "Eloquent JavaScript (Free Book)",
   },
+  // Python Automate
   {
     matcher: (r) => r.includes("automate the boring stuff"),
     url: "https://automatetheboringstuff.com/",
@@ -203,10 +205,11 @@ const CANONICAL_DIRECT_COURSES: Array<{
 ];
 
 /**
- * Resolves a task resource and platform into a guaranteed, zero-404 URL.
+ * Resolves a task resource and platform into a direct or search URL.
  * 
- * 1. Checks curated canonical course directory for an exact permanent match.
- * 2. Falls back to a deterministic, platform-targeted search URL that never 404s.
+ * 1. Validates explicit URLs for safety (http/https only, no credentials).
+ * 2. Checks curated canonical course directory for an exact match.
+ * 3. Falls back to a deterministic, platform-targeted search URL.
  */
 export function resolveResourceUrl(
   resource: string,
@@ -217,13 +220,25 @@ export function resolveResourceUrl(
   const resLower = cleanRes.toLowerCase();
   const platLower = cleanPlat.toLowerCase();
 
-  // If resource is already an explicit HTTP/HTTPS URL, return directly
+  // If resource is an explicit HTTP/HTTPS URL, validate and return
   if (cleanRes.startsWith("http://") || cleanRes.startsWith("https://")) {
-    return {
-      url: cleanRes,
-      label: cleanPlat || "Direct Resource",
-      isDirect: true,
-    };
+    try {
+      const parsed = new URL(cleanRes);
+      if (
+        (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        !parsed.username &&
+        !parsed.password
+      ) {
+        return {
+          url: parsed.toString(),
+          label: cleanPlat || "Suggested Resource",
+          isDirect: true,
+          isCurated: false,
+        };
+      }
+    } catch {
+      // Invalid URL falls through to search fallbacks
+    }
   }
 
   // Layer 1: Curated direct courses
@@ -233,11 +248,12 @@ export function resolveResourceUrl(
         url: entry.url,
         label: entry.label,
         isDirect: true,
+        isCurated: true,
       };
     }
   }
 
-  // Layer 2: Deterministic zero-404 platform searches
+  // Layer 2: Deterministic search URLs
   const encodedQuery = encodeURIComponent(cleanRes);
 
   if (platLower.includes("youtube")) {
@@ -245,6 +261,7 @@ export function resolveResourceUrl(
       url: `https://www.youtube.com/results?search_query=${encodedQuery}`,
       label: `Watch on YouTube`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -253,6 +270,7 @@ export function resolveResourceUrl(
       url: `https://www.kaggle.com/search?q=${encodedQuery}`,
       label: `Kaggle Search`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -261,6 +279,7 @@ export function resolveResourceUrl(
       url: `https://www.freecodecamp.org/news/search/?query=${encodedQuery}`,
       label: `freeCodeCamp`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -269,6 +288,7 @@ export function resolveResourceUrl(
       url: `https://www.coursera.org/search?query=${encodedQuery}`,
       label: `Coursera (Free Audit)`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -277,6 +297,7 @@ export function resolveResourceUrl(
       url: `https://www.edx.org/search?q=${encodedQuery}`,
       label: `edX (Free Audit)`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -285,6 +306,7 @@ export function resolveResourceUrl(
       url: `https://codelabs.developers.google.com/?s=${encodedQuery}`,
       label: `Google Codelabs`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
@@ -293,15 +315,17 @@ export function resolveResourceUrl(
       url: `https://github.com/search?q=${encodedQuery}&type=repositories`,
       label: `GitHub Repositories`,
       isDirect: false,
+      isCurated: false,
     };
   }
 
-  // Default web search fallback (never 404s)
+  // Default web search fallback
   const fullSearch = encodeURIComponent(`${cleanRes} ${cleanPlat} free tutorial course`.trim());
   return {
     url: `https://www.google.com/search?q=${fullSearch}`,
     label: cleanPlat ? `${cleanPlat} Resource` : "Learning Resource",
     isDirect: false,
+    isCurated: false,
   };
 }
 
@@ -320,9 +344,23 @@ function formatICSDate(d: Date): string {
 }
 
 /**
+ * Format Date to RFC 5545 true UTC datetime string YYYYMMDDTHHMMSSZ
+ */
+export function formatICSUTC(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  const month = pad(d.getUTCMonth() + 1);
+  const day = pad(d.getUTCDate());
+  const hours = pad(d.getUTCHours());
+  const minutes = pad(d.getUTCMinutes());
+  const seconds = pad(d.getUTCSeconds());
+  return `${year}${month}${day}T${hours}${minutes}${seconds}Z`;
+}
+
+/**
  * Escape text for RFC 5545 values (commas, semicolons, backslashes, newlines)
  */
-function escapeICSText(text: string): string {
+export function escapeICSText(text: string): string {
   return text
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
@@ -331,15 +369,50 @@ function escapeICSText(text: string): string {
 }
 
 /**
- * Generates and downloads an RFC 5545 (.ics) calendar file containing
- * twice-weekly structured study sessions (Mondays and Thursdays 18:00 - 20:00)
- * for the candidate's learning roadmap.
+ * Fold lines at 75 UTF-8 bytes per RFC 5545 Section 3.1.
+ * Continuation lines start with a single space.
  */
-export function downloadRoadmapICS(
+export function foldICSLine(line: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(line);
+  if (bytes.length <= 75) return line;
+
+  const decoder = new TextDecoder();
+  let result = "";
+  let start = 0;
+  let isFirst = true;
+
+  while (start < bytes.length) {
+    const maxLen = isFirst ? 75 : 74; // continuation lines begin with a single space
+    let end = Math.min(start + maxLen, bytes.length);
+
+    // Never split in the middle of a multi-byte UTF-8 sequence (continuation byte: 10xxxxxx)
+    while (end > start && end < bytes.length && (bytes[end] & 0xc0) === 0x80) {
+      end--;
+    }
+
+    const chunk = decoder.decode(bytes.slice(start, end));
+    if (isFirst) {
+      result += chunk;
+      isFirst = false;
+    } else {
+      result += "\r\n " + chunk;
+    }
+    start = end;
+  }
+  return result;
+}
+
+/**
+ * Pure generator for RFC 5545 (.ics) calendar content.
+ * Generates twice-weekly study sessions (Mondays and Thursdays 18:00 - 20:00).
+ */
+export function buildRoadmapICS(
   roadmapData: RoadmapData | null | undefined,
-  targetRole: string = "Tech Career"
-): void {
-  if (!roadmapData) return;
+  targetRole: string = "Tech Career",
+  now: Date = new Date()
+): string | null {
+  if (!roadmapData) return null;
 
   const allWeeks: WeekPlan[] = [];
   if (Array.isArray(roadmapData.thirty_day_plan)) {
@@ -352,11 +425,12 @@ export function downloadRoadmapICS(
     allWeeks.push(...roadmapData.ninety_day_plan);
   }
 
-  if (allWeeks.length === 0) return;
+  if (allWeeks.length === 0) return null;
+
+  const cleanRole = targetRole.replace(/[\r\n]+/g, " ").trim() || "Tech Career";
 
   // Determine starting Monday (next upcoming Monday at 18:00 local time)
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday, ...
+  const dayOfWeek = now.getDay();
   const daysUntilNextMonday = ((1 - dayOfWeek + 7) % 7) || 7;
   const startMonday = new Date(
     now.getFullYear(),
@@ -367,20 +441,17 @@ export function downloadRoadmapICS(
     0
   );
 
-  const events: string[] = [];
-  const dtstamp = formatICSDate(new Date()) + "Z";
+  const rawEvents: string[] = [];
+  const dtstamp = formatICSUTC(now);
 
   allWeeks.forEach((week, weekIndex) => {
-    // 2 study blocks per week:
-    // Session 1: Monday 18:00 - 20:00
-    // Session 2: Thursday 18:00 - 20:00 (Monday + 3 days)
     const mondayDate = new Date(startMonday);
     mondayDate.setDate(startMonday.getDate() + weekIndex * 7);
 
     const thursdayDate = new Date(mondayDate);
     thursdayDate.setDate(mondayDate.getDate() + 3);
 
-    const tasks = week.tasks || [];
+    const tasks = Array.isArray(week.tasks) ? week.tasks : [];
     const mid = Math.ceil(tasks.length / 2);
     const session1Tasks = tasks.slice(0, mid);
     const session2Tasks = tasks.slice(mid);
@@ -388,13 +459,13 @@ export function downloadRoadmapICS(
     const sessions = [
       {
         date: mondayDate,
-        title: `Ustaad Roadmap [Week ${week.week} - Part 1]: ${week.focus}`,
+        title: `Ustaad Roadmap [Week ${week.week || weekIndex + 1} - Part 1]: ${week.focus || "Core Skills"}`,
         tasks: session1Tasks.length > 0 ? session1Tasks : tasks,
         sessionNum: 1,
       },
       {
         date: thursdayDate,
-        title: `Ustaad Roadmap [Week ${week.week} - Part 2]: ${week.focus}`,
+        title: `Ustaad Roadmap [Week ${week.week || weekIndex + 1} - Part 2]: ${week.focus || "Core Skills"}`,
         tasks: session2Tasks.length > 0 ? session2Tasks : tasks,
         sessionNum: 2,
       },
@@ -403,58 +474,69 @@ export function downloadRoadmapICS(
     sessions.forEach((s) => {
       const startTime = new Date(s.date);
       const endTime = new Date(s.date);
-      endTime.setHours(endTime.getHours() + 2); // 2-hour study block
+      endTime.setHours(endTime.getHours() + 2);
 
       const taskDescriptions = s.tasks.map((t, idx) => {
         const link = resolveResourceUrl(t.resource, t.platform);
-        return `${idx + 1}. ${t.task} (${t.estimated_hours}h)\n   Resource: ${t.resource} [${t.platform}]\n   Link: ${link.url}`;
+        return `${idx + 1}. ${t.task || "Task"} (${t.estimated_hours || 2}h)\n   Resource: ${t.resource || "Resource"} [${t.platform || "Online"}]\n   Link: ${link.url}`;
       });
 
       const desc = escapeICSText(
-        `Focus: ${week.focus}\n` +
-        `Role: ${targetRole}\n\n` +
+        `Focus: ${week.focus || "Skill development"}\n` +
+        `Role: ${cleanRole}\n\n` +
         `Study Tasks:\n` +
         taskDescriptions.join("\n\n") +
         `\n\nGenerated by Ustaad Career OS (https://www.ustaad.systems)`
       );
 
-      const uid = `ustaad-w${week.week}-s${s.sessionNum}-${startTime.getTime()}@ustaad.systems`;
+      const uid = `ustaad-w${week.week || weekIndex + 1}-s${s.sessionNum}-${startTime.getTime()}@ustaad.systems`;
 
-      events.push(
-        [
-          "BEGIN:VEVENT",
-          `UID:${uid}`,
-          `DTSTAMP:${dtstamp}`,
-          `DTSTART:${formatICSDate(startTime)}`,
-          `DTEND:${formatICSDate(endTime)}`,
-          `SUMMARY:${escapeICSText(s.title)}`,
-          `DESCRIPTION:${desc}`,
-          "LOCATION:Online Learning",
-          "STATUS:CONFIRMED",
-          "BEGIN:VALARM",
-          "TRIGGER:-PT15M",
-          "ACTION:DISPLAY",
-          `DESCRIPTION:Reminder: ${escapeICSText(s.title)}`,
-          "END:VALARM",
-          "END:VEVENT",
-        ].join("\r\n")
-      );
+      const lines = [
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${dtstamp}`,
+        `DTSTART:${formatICSDate(startTime)}`,
+        `DTEND:${formatICSDate(endTime)}`,
+        `SUMMARY:${escapeICSText(s.title)}`,
+        `DESCRIPTION:${desc}`,
+        "LOCATION:Online Learning",
+        "STATUS:CONFIRMED",
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        `DESCRIPTION:${escapeICSText(`Reminder: ${s.title}`)}`,
+        "END:VALARM",
+        "END:VEVENT",
+      ];
+      rawEvents.push(...lines);
     });
   });
 
-  const calendarContent = [
+  const calendarLines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//AgenticEra Systems//Ustaad Career OS Roadmap//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    `X-WR-CALNAME:Ustaad 90-Day Roadmap (${targetRole})`,
-    "X-WR-TIMEZONE:Asia/Karachi",
-    ...events,
+    `X-WR-CALNAME:${escapeICSText(`Ustaad 90-Day Roadmap (${cleanRole})`)}`,
+    ...rawEvents,
     "END:VCALENDAR",
-  ].join("\r\n");
+  ];
 
-  const blob = new Blob([calendarContent], { type: "text/calendar;charset=utf-8" });
+  return calendarLines.map(foldICSLine).join("\r\n");
+}
+
+/**
+ * Generates and downloads an RFC 5545 (.ics) calendar file.
+ */
+export function downloadRoadmapICS(
+  roadmapData: RoadmapData | null | undefined,
+  targetRole: string = "Tech Career"
+): void {
+  const content = buildRoadmapICS(roadmapData, targetRole);
+  if (!content) return;
+
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -463,6 +545,5 @@ export function downloadRoadmapICS(
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-

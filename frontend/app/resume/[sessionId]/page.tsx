@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getPipelineResults } from "@/lib/api";
+import { getPipelineResults, getResumeContact } from "@/lib/api";
 import {
   ArrowLeft,
   Printer,
@@ -34,21 +34,22 @@ interface BulletItem {
   rewritten: string;
 }
 
-function extractContactFromCvText(cvText: string, city?: string): string {
+function formatContactHeader(
+  contact: {
+    email?: string | null;
+    phone?: string | null;
+    linkedin?: string | null;
+    github?: string | null;
+  } | null,
+  city?: string
+): string {
   const parts: string[] = [];
   if (city) parts.push(`${city}, Pakistan`);
 
-  const emailMatch = cvText.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
-  if (emailMatch) parts.push(emailMatch[0]);
-
-  const phoneMatch = cvText.match(/(?:\+92|03)\d[\d\s-]{8,12}\d/);
-  if (phoneMatch) parts.push(phoneMatch[0].trim());
-
-  const linkedinMatch = cvText.match(/(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9_-]+/i);
-  if (linkedinMatch) parts.push(linkedinMatch[0].replace(/^https?:\/\/(www\.)?/i, ""));
-
-  const githubMatch = cvText.match(/(?:https?:\/\/)?(?:www\.)?github\.com\/[A-Za-z0-9_.-]+/i);
-  if (githubMatch) parts.push(githubMatch[0].replace(/^https?:\/\/(www\.)?/i, ""));
+  if (contact?.email) parts.push(contact.email);
+  if (contact?.phone) parts.push(contact.phone);
+  if (contact?.linkedin) parts.push(contact.linkedin.replace(/^https?:\/\/(www\.)?/i, ""));
+  if (contact?.github) parts.push(contact.github.replace(/^https?:\/\/(www\.)?/i, ""));
 
   if (parts.length === 0) {
     return "City, Pakistan | email@example.com | +92-300-0000000 | linkedin.com/in/yourprofile | github.com/yourusername";
@@ -99,7 +100,10 @@ export default function PrintableResumePage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await getPipelineResults(sessionId);
+        const [data, contact] = await Promise.all([
+          getPipelineResults(sessionId),
+          getResumeContact(sessionId).catch(() => null),
+        ]);
         if (!data || data.error) {
           setError(data?.error || "Could not load resume session.");
           return;
@@ -110,7 +114,7 @@ export default function PrintableResumePage() {
 
         setFullName(profile.name || "Your Full Name");
         setHeadline(data.target_role || "Software Engineer");
-        setContactLine(extractContactFromCvText(data.cv_text || "", data.target_city));
+        setContactLine(formatContactHeader(contact, data.target_city));
         setSummary(
           cv.rewritten_summary ||
             profile.cv_summary_original ||

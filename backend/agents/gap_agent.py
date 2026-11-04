@@ -15,7 +15,7 @@ async def run_gap_agent(
     clean_jd = (job_description or "").strip()
     if clean_jd:
         jd_section = (
-            f"\nSPECIFIC TARGET JOB DESCRIPTION (JD):\n{clean_jd[:4000]}\n"
+            f"\nSPECIFIC TARGET JOB DESCRIPTION (JD):\n<target_job_description>\n{clean_jd[:4000]}\n</target_job_description>\n"
             "(Compute jd_match_score 0-100 and list exact jd_missing_keywords from this JD.)\n"
         )
         jd_score_example = "78"

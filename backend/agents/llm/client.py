@@ -11,6 +11,7 @@ import re
 from typing import Optional
 import httpx
 
+import settings
 from agents.llm.adapters import (
     LLMProviderError,
     call_anthropic_adapter,
@@ -48,6 +49,21 @@ def strip_thinking_blocks(text: str) -> str:
     if "</think>" in cleaned:
         cleaned = cleaned.split("</think>")[-1].strip()
     return cleaned
+
+
+def _pythonize_json_literals(block: str) -> str:
+    """Safely replace JSON true/false/null with Python True/False/None outside string literals."""
+    tokens = []
+    # Match double or single quoted strings vs other tokens
+    for part in re.split(r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')', block):
+        if part.startswith(('"', "'")):
+            tokens.append(part)
+        else:
+            p = re.sub(r'\btrue\b', 'True', part)
+            p = re.sub(r'\bfalse\b', 'False', p)
+            p = re.sub(r'\bnull\b', 'None', p)
+            tokens.append(p)
+    return "".join(tokens)
 
 
 def parse_llm_json(text: str) -> dict:
@@ -93,11 +109,7 @@ def parse_llm_json(text: str) -> dict:
 
             # 4. ast.literal_eval fallback
             try:
-                block_py = (
-                    block.replace("true", "True")
-                    .replace("false", "False")
-                    .replace("null", "None")
-                )
+                block_py = _pythonize_json_literals(block)
                 evaluated = ast.literal_eval(block_py)
                 if isinstance(evaluated, (dict, list)):
                     return evaluated
@@ -105,11 +117,7 @@ def parse_llm_json(text: str) -> dict:
                 pass
 
     try:
-        clean_py = (
-            clean.replace("true", "True")
-            .replace("false", "False")
-            .replace("null", "None")
-        )
+        clean_py = _pythonize_json_literals(clean)
         evaluated = ast.literal_eval(clean_py)
         if isinstance(evaluated, (dict, list)):
             return evaluated
@@ -177,6 +185,7 @@ async def _dispatch_once(
     prompt: str,
     config: LLMConfig,
     max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     spec = PROVIDER_REGISTRY.get(config.provider)
     if not spec:
@@ -187,10 +196,16 @@ async def _dispatch_once(
         )
 
     if spec.adapter == "gemini":
-        return await call_gemini_adapter(system_instruction, prompt, config, max_tokens=max_tokens)
+        return await call_gemini_adapter(
+            system_instruction, prompt, config, max_tokens=max_tokens, temperature=temperature
+        )
     if spec.adapter == "anthropic":
-        return await call_anthropic_adapter(system_instruction, prompt, config, max_tokens=max_tokens)
-    return await call_openai_compat_adapter(system_instruction, prompt, config, max_tokens=max_tokens)
+        return await call_anthropic_adapter(
+            system_instruction, prompt, config, max_tokens=max_tokens, temperature=temperature
+        )
+    return await call_openai_compat_adapter(
+        system_instruction, prompt, config, max_tokens=max_tokens, temperature=temperature
+    )
 
 
 async def call_llm(
@@ -199,28 +214,35 @@ async def call_llm(
     llm_config: Optional[LLMConfig] = None,
     max_retries: Optional[int] = None,
     max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """
     Execute an LLM request with provider-aware retries and secret scrubbing.
-    - Server-default mode: up to 8 retries + KAGGLE_LLM_URL failover.
+    - Server-default mode: up to 8 retries + KAGGLE_LLM_URL failover (if enabled).
     - BYOK mode: fast-fails on invalid key / missing custom model; retries transient 429/5xx.
     """
     config = llm_config or build_default_llm_config()
     retries = max_retries if max_retries is not None else (8 if not config.is_byok else 4)
-    kaggle_url = os.getenv("KAGGLE_LLM_URL") if not config.is_byok else None
+    failover_allowed = not config.is_byok and settings.llm_failover_enabled()
 
     last_err: Optional[Exception] = None
     for attempt in range(retries):
         try:
-            return await _dispatch_once(system_instruction, prompt, config, max_tokens=max_tokens)
+            return await _dispatch_once(
+                system_instruction, prompt, config, max_tokens=max_tokens, temperature=temperature
+            )
         except LLMProviderError as e:
             last_err = e
-            if kaggle_url:
+            # Only failover if server-default, operator enabled it, and error is transient
+            if failover_allowed and e.retryable and attempt >= 2:
                 try:
-                    logger.warning("Server default Gemini hit error (%s); attempting Kaggle failover...", e.error_code)
+                    logger.warning(
+                        "Server default Gemini hit transient error (%s); attempting secondary failover...",
+                        e.error_code,
+                    )
                     return await call_kaggle_fallback(system_instruction, prompt)
                 except Exception as fb_err:
-                    logger.error("Kaggle failover failed: %s", redact_secrets(str(fb_err), config.api_key))
+                    logger.error("Secondary failover failed: %s", redact_secrets(str(fb_err), config.api_key))
 
             if e.retryable and attempt < retries - 1:
                 wait = min(2 ** attempt, 15)
@@ -255,7 +277,7 @@ async def call_llm(
             clean_msg = redact_secrets(str(e), config.api_key)
             raise RuntimeError(clean_msg) from None
 
-    if kaggle_url:
+    if failover_allowed:
         try:
             return await call_kaggle_fallback(system_instruction, prompt)
         except Exception:
@@ -270,6 +292,7 @@ async def call_llm_json(
     system_instruction: str,
     prompt: str,
     llm_config: Optional[LLMConfig] = None,
+    temperature: Optional[float] = None,
 ) -> dict:
     """
     Call the configured LLM provider and parse structured JSON output.
@@ -283,7 +306,7 @@ async def call_llm_json(
         "byok" if config.is_byok else "server_default",
     )
 
-    raw = await call_llm(system_instruction, prompt, llm_config=config)
+    raw = await call_llm(system_instruction, prompt, llm_config=config, temperature=temperature)
     try:
         return parse_llm_json(raw)
     except Exception:
@@ -293,6 +316,8 @@ async def call_llm_json(
             "CRITICAL FORMATTING REQUIREMENT: Your response MUST be a single valid RFC8259 JSON object "
             "using double quotes for all keys and string values, with NO markdown fences and NO trailing commas."
         )
-        raw_retry = await call_llm(system_instruction, repair_prompt, llm_config=config, max_retries=2)
+        raw_retry = await call_llm(
+            system_instruction, repair_prompt, llm_config=config, max_retries=2, temperature=temperature
+        )
         return parse_llm_json(raw_retry)
 

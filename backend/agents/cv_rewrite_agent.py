@@ -15,7 +15,7 @@ async def run_cv_rewrite_agent(
     cfg = llm_config or resolve_llm_config_from_values(x_gemini_api_key=api_key)
     clean_jd = (job_description or "").strip()
     jd_section = (
-        f"\nSPECIFIC TARGET JOB DESCRIPTION (TAILOR BULLETS & PITCH TO THIS JD):\n{clean_jd[:4000]}\n"
+        f"\nSPECIFIC TARGET JOB DESCRIPTION (TAILOR BULLETS & PITCH TO THIS JD):\n<target_job_description>\n{clean_jd[:4000]}\n</target_job_description>\n"
         if clean_jd
         else ""
     )

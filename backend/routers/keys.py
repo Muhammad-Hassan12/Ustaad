@@ -7,7 +7,7 @@ Keys are never echoed back, stored in any database, or written to logs.
 import os
 from typing import Optional
 import httpx
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Depends, Header
 from dotenv import load_dotenv
 
 from agents.llm.adapters import (
@@ -392,7 +392,10 @@ async def _run_validation(
         }
 
 
-@router.get("/validate")
+from security import key_validation_limit
+
+
+@router.get("/validate", dependencies=[Depends(key_validation_limit)])
 async def validate_key_get(
     x_llm_api_key: Optional[str] = Header(default=None),
     x_gemini_api_key: Optional[str] = Header(default=None),
@@ -409,7 +412,7 @@ async def validate_key_get(
     )
 
 
-@router.post("/validate")
+@router.post("/validate", dependencies=[Depends(key_validation_limit)])
 async def validate_key_post(
     x_llm_api_key: Optional[str] = Header(default=None),
     x_gemini_api_key: Optional[str] = Header(default=None),

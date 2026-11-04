@@ -14,7 +14,9 @@ Return ONLY valid JSON matching exactly this schema. No preamble, no markdown fe
 
 PROFILE_USER_TEMPLATE = """
 CV TEXT:
+<candidate_cv>
 {cv_text}
+</candidate_cv>
 
 USER PROVIDED:
 - Target Role: {target_role}

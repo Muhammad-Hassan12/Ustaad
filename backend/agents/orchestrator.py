@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Optional
 from agents.cv_rewrite_agent import run_cv_rewrite_agent
 from agents.gap_agent import run_gap_agent
@@ -7,7 +8,10 @@ from agents.market_agent import run_market_agent
 from agents.profile_agent import run_profile_agent
 from agents.roadmap_agent import run_roadmap_agent
 from db.supabase_client import mark_agent_complete, release_session_lock, update_session
+import settings
 from tools.proof_of_work import run_proof_of_work_audit
+
+logger = logging.getLogger("ustaad.agents")
 
 
 async def run_pipeline(
@@ -82,7 +86,8 @@ async def run_pipeline(
             if pow_data:
                 await emit("agent_complete", "pow", "Proof-of-work audit complete")
             return pow_data
-        except Exception:
+        except Exception as e:
+            logger.warning("Proof-of-work audit failed for session %s: %s", session_id, e)
             return None
 
     async def _stage_roadmap(gap_data: dict) -> dict:
@@ -105,13 +110,19 @@ async def run_pipeline(
         await emit("agent_complete", "cv_rewrite", f"CV rewritten. ATS score: {data.get('ats_score_estimate', '?')}/100")
         return data
 
-    try:
-        # Stage 1: Run Profile + Market + Proof-of-Work in parallel
-        profile_data, market_data, pow_data = await asyncio.gather(
-            _stage_profile(),
-            _stage_market(),
-            _stage_proof_of_work(),
-        )
+    async def _run_dag():
+        # Stage 1: Run Profile + Market + Proof-of-Work in parallel with sibling cancellation on error
+        t1 = asyncio.create_task(_stage_profile())
+        t2 = asyncio.create_task(_stage_market())
+        t3 = asyncio.create_task(_stage_proof_of_work())
+        try:
+            profile_data, market_data, pow_data = await asyncio.gather(t1, t2, t3)
+        except Exception:
+            for task in (t1, t2, t3):
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(t1, t2, t3, return_exceptions=True)
+            raise
 
         # Preserve model provenance cleanly inside profile_data metadata (non-sensitive)
         if isinstance(profile_data, dict):
@@ -125,7 +136,7 @@ async def run_pipeline(
                 profile_data["target_job_description"] = job_description.strip()[:8000]
             if pow_data:
                 profile_data["proof_of_work"] = pow_data
-                await update_session(session_id, {"profile_data": profile_data})
+            await update_session(session_id, {"profile_data": profile_data})
 
         # Stage 2: Gap Analysis (depends on Profile + Market)
         await emit("agent_start", "gap", "Analyzing skill gaps against market requirements...")
@@ -138,11 +149,17 @@ async def run_pipeline(
         await mark_agent_complete(session_id, "gap", gap_data)
         await emit("agent_complete", "gap", f"Readiness score: {gap_data.get('overall_readiness_score', '?')}/100")
 
-        # Stage 3: Run Roadmap + CV Rewrite in parallel
-        roadmap_data, cv_rewrite_data = await asyncio.gather(
-            _stage_roadmap(gap_data),
-            _stage_cv_rewrite(profile_data, market_data, gap_data),
-        )
+        # Stage 3: Run Roadmap + CV Rewrite in parallel with sibling cancellation on error
+        t_road = asyncio.create_task(_stage_roadmap(gap_data))
+        t_cv = asyncio.create_task(_stage_cv_rewrite(profile_data, market_data, gap_data))
+        try:
+            roadmap_data, cv_rewrite_data = await asyncio.gather(t_road, t_cv)
+        except Exception:
+            for task in (t_road, t_cv):
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(t_road, t_cv, return_exceptions=True)
+            raise
 
         # Compute re-audit score delta if baseline session was provided (0 Serper calls)
         if baseline_snapshot or baseline_session_id:
@@ -198,11 +215,22 @@ async def run_pipeline(
         await update_session(session_id, {"profile_data": profile_data, "status": "complete"})
         await emit("pipeline_complete", "orchestrator", "Your Career Dossier is ready!")
 
+    try:
+        await asyncio.wait_for(_run_dag(), timeout=settings.pipeline_timeout_seconds())
+    except asyncio.TimeoutError:
+        safe_err = f"Pipeline execution timed out after {settings.pipeline_timeout_seconds()} seconds."
+        try:
+            await update_session(session_id, {"status": "error", "error_message": safe_err})
+        except Exception:
+            pass
+        await emit("error", "orchestrator", safe_err)
     except Exception as e:
         safe_err = redact_secrets(str(e), cfg.api_key)
-        await update_session(session_id, {"status": "error", "error_message": safe_err})
+        try:
+            await update_session(session_id, {"status": "error", "error_message": safe_err})
+        except Exception:
+            pass
         await emit("error", "orchestrator", f"Pipeline error: {safe_err}")
-
     finally:
         release_session_lock(session_id)
         await status_queue.put(None)  # Sentinel to close SSE stream

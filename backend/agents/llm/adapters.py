@@ -136,6 +136,7 @@ async def call_gemini_adapter(
     prompt: str,
     config: LLMConfig,
     max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """Call Google Gemini Generative Language REST API using header auth (no key in URL)."""
     if not config.api_key:
@@ -151,7 +152,7 @@ async def call_gemini_adapter(
 
     gen_cfg: dict = {
         "responseMimeType": "application/json",
-        "temperature": 0.7,
+        "temperature": 0.7 if temperature is None else temperature,
     }
     if max_tokens is not None:
         gen_cfg["maxOutputTokens"] = max_tokens
@@ -225,6 +226,7 @@ async def call_openai_compat_adapter(
     prompt: str,
     config: LLMConfig,
     max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """
     Call any OpenAI-compatible Chat Completions endpoint
@@ -257,7 +259,7 @@ async def call_openai_compat_adapter(
     }
 
     if not is_reasoning:
-        payload["temperature"] = 0.7
+        payload["temperature"] = 0.7 if temperature is None else temperature
         if spec.supports_json_mode:
             payload["response_format"] = {"type": "json_object"}
 
@@ -338,6 +340,7 @@ async def call_anthropic_adapter(
     prompt: str,
     config: LLMConfig,
     max_tokens: Optional[int] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """Call Anthropic Messages API (/v1/messages)."""
     spec = PROVIDER_REGISTRY["anthropic"]
@@ -357,7 +360,7 @@ async def call_anthropic_adapter(
     payload: dict = {
         "model": config.model,
         "max_tokens": max_tokens or 4096,
-        "temperature": 0.7,
+        "temperature": 0.7 if temperature is None else temperature,
         "system": sys_text,
         "messages": [{"role": "user", "content": prompt}],
     }
