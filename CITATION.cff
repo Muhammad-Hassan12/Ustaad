@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use or reference Ustaad in software, research, or articles, please cite it using the metadata below."
+type: software
+title: "Ustaad: AI Career Operating System for Pakistani Tech Talent"
+abstract: "Open-source AI Career Operating System featuring a 6-agent async DAG pipeline, live Pakistani job-market grounding, SSRF-guarded Proof-of-Work auditing, ATS CV rewriting, adaptive mock interviews, and multi-provider BYOK support."
+authors:
+  - given-names: "Syed Muhammad"
+    family-names: "Hassan"
+    affiliation: "AgenticEra Systems"
+    website: "https://www.smhassan.me/"
+repository-code: "https://github.com/Muhammad-Hassan12/Ustaad"
+url: "https://www.ustaad.systems"
+license: Apache-2.0
+version: "2.1.0"
+date-released: "2026-11-06"
+keywords:
+  - ai-agents
+  - career-intelligence
+  - multi-agent-systems
+  - fastapi
+  - nextjs
+  - pakistan-tech
+  - byok

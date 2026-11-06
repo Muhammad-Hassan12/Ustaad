@@ -701,17 +701,17 @@ export default function AboutPage() {
         </div>
       </AnimatedSection>
 
-      {/* 10. The Team */}
-      <AnimatedSection className="flex flex-col gap-8">
+      {/* 10. Creator & Maintainer */}
+      <AnimatedSection className="flex flex-col gap-6">
         <div className="text-center">
-          <h2 className="font-display text-4xl text-parchment">The Team</h2>
+          <h2 className="font-display text-4xl text-parchment">Creator &amp; Maintainer</h2>
           <p className="font-body text-xs text-warm-gray mt-1">
-            Built by two developers from Karachi, Pakistan 🇵🇰
+            Architected &amp; engineered in Karachi, Pakistan 🇵🇰
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">
-          {/* Card 1 — Hassan */}
+        <div className="max-w-2xl mx-auto w-full flex flex-col gap-5">
+          {/* Primary Creator Card — Syed Muhammad Hassan */}
           <div className="bg-parchment text-ink rounded-sm border border-brass/30 p-8 shadow-xl flex flex-col justify-between relative card-hover paper-grain">
             <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
             <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-brass z-10 pointer-events-none" />
@@ -719,28 +719,37 @@ export default function AboutPage() {
             <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
 
             <div>
-              <Image
-                src="/images/team/muhammad-hassan12.jpg"
-                alt="Syed Muhammad Hassan"
-                width={56}
-                height={56}
-                unoptimized
-                className="w-14 h-14 rounded-full shadow-md border-2 border-brass object-cover"
-              />
-              <h3 className="font-display text-2xl text-ink mt-4">Syed Muhammad Hassan</h3>
-              <p className="font-mono text-xs text-teal font-semibold mt-1">Backend/Frontend Engineer/Architect & AI Agents</p>
-              <p className="font-body text-xs text-ink/80 mt-3 leading-relaxed">
-                GenAI developer and co-founder & CTO of AgenticEra Systems. Built the multi-agent orchestration DAG,
-                FastAPI backend, multi-provider BYOK engine, and contributed across the frontend.
+              <div className="flex items-center gap-4">
+                <Image
+                  src="/images/team/muhammad-hassan12.jpg"
+                  alt="Syed Muhammad Hassan"
+                  width={56}
+                  height={56}
+                  unoptimized
+                  className="w-14 h-14 rounded-full shadow-md border-2 border-brass object-cover shrink-0"
+                />
+                <div>
+                  <h3 className="font-display text-2xl text-ink">Syed Muhammad Hassan</h3>
+                  <p className="font-mono text-xs text-teal font-semibold mt-0.5">
+                    Creator, Lead Architect &amp; Full-Stack Engineer
+                  </p>
+                </div>
+              </div>
+
+              <p className="font-body text-xs sm:text-sm text-ink/80 mt-4 leading-relaxed">
+                Created, architected, and engineered Ustaad (v1 &amp; v2) end-to-end — including the 6-agent
+                async DAG pipeline, FastAPI backend, multi-provider BYOK studio, Proof-of-Work &amp; ReportLab
+                engineering utilities, and the Next.js 16 Manuscript Ledger frontend and interactive workspace.
+                Co-founder &amp; CTO at AgenticEra Systems.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 mt-6 border-t border-ink/15 pt-4">
+            <div className="flex flex-wrap items-center gap-5 mt-6 border-t border-ink/15 pt-4">
               <a
                 href="https://www.smhassan.me/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-xs text-ink/70 hover:text-brass flex items-center gap-1.5 transition-colors"
+                className="font-body text-xs text-ink/75 hover:text-brass flex items-center gap-1.5 transition-colors font-medium"
               >
                 <Globe size={14} /> Portfolio
               </a>
@@ -748,7 +757,7 @@ export default function AboutPage() {
                 href="https://github.com/Muhammad-Hassan12"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-xs text-ink/70 hover:text-brass flex items-center gap-1.5 transition-colors"
+                className="font-body text-xs text-ink/75 hover:text-brass flex items-center gap-1.5 transition-colors font-medium"
               >
                 <GithubIcon size={14} /> GitHub
               </a>
@@ -756,55 +765,39 @@ export default function AboutPage() {
                 href="https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-xs text-ink/70 hover:text-brass flex items-center gap-1.5 transition-colors"
+                className="font-body text-xs text-ink/75 hover:text-brass flex items-center gap-1.5 transition-colors font-medium"
               >
                 <LinkedinIcon size={14} /> LinkedIn
               </a>
             </div>
           </div>
 
-          {/* Card 2 — Abdul Mannan */}
-          <div className="bg-parchment text-ink rounded-sm border border-brass/30 p-8 shadow-xl flex flex-col justify-between relative card-hover paper-grain">
-            <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-brass z-10 pointer-events-none" />
-            <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-brass z-10 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-brass z-10 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-brass z-10 pointer-events-none" />
-
-            <div>
-              <Image
-                src="/images/team/abdulmannan991.png"
-                alt="Abdul Mannan Fazlani"
-                width={56}
-                height={56}
-                unoptimized
-                className="w-14 h-14 rounded-full shadow-md border-2 border-teal object-cover"
-              />
-              <h3 className="font-display text-2xl text-ink mt-4">Abdul Mannan Fazlani</h3>
-              <p className="font-mono text-xs text-teal font-semibold mt-1">Frontend Engineer & UI/UX</p>
-              <p className="font-body text-xs text-ink/80 mt-3 leading-relaxed">
-                Full-stack developer and Founder of AgenticEra Systems.
-                Built the entire Next.js frontend, dashboard, and interview UI.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4 mt-6 border-t border-ink/15 pt-4">
+          {/* Capstone Origin Citation Note */}
+          <div className="border-l-2 border-brass/50 pl-4 py-1">
+            <p className="font-body text-xs text-warm-gray leading-relaxed">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-brass/90 mr-1.5">
+                Capstone Origin Note:
+              </span>
+              Ustaad v1 was originally registered for the Kaggle × Google 5-Day AI Agents Capstone (2026) alongside competition teammate{" "}
               <a
                 href="https://github.com/abdulmannan991"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-xs text-ink/70 hover:text-brass flex items-center gap-1.5 transition-colors"
+                className="text-parchment/90 underline decoration-brass/40 hover:text-brass transition-colors"
               >
-                <GithubIcon size={14} /> GitHub
-              </a>
+                Abdul Mannan Fazlani
+              </a>{" "}
+              (
               <a
                 href="https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-xs text-ink/70 hover:text-brass flex items-center gap-1.5 transition-colors"
+                className="text-warm-gray underline decoration-warm-gray/40 hover:text-brass transition-colors"
               >
-                <LinkedinIcon size={14} /> LinkedIn
+                LinkedIn
               </a>
-            </div>
+              ).
+            </p>
           </div>
         </div>
       </AnimatedSection>

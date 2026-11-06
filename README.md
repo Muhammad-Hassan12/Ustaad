@@ -15,7 +15,9 @@
 >
 > *"The career coach Pakistan never had."*
 
-[**Live App**](https://www.ustaad.systems) · [**Methodology & Team**](https://www.ustaad.systems/about) · [**BYOK & Providers**](docs/PROVIDERS_AND_BYOK.md) · [**Verification Record (41 Tests)**](docs/VERIFICATION.md) · [**Deployment Guide**](docs/DEPLOYMENT.md)
+Created, architected, and maintained by [**Syed Muhammad Hassan**](https://www.smhassan.me/) (AgenticEra Systems).
+
+[**Live App**](https://www.ustaad.systems) · [**Architecture & Creator**](https://www.ustaad.systems/about) · [**BYOK & Providers**](docs/PROVIDERS_AND_BYOK.md) · [**Verification Record (41 Tests)**](docs/VERIFICATION.md) · [**Deployment Guide**](docs/DEPLOYMENT.md)
 
 </div>
 
@@ -37,12 +39,12 @@ The platform runs free out of the box on a server-locked `gemini-3.1-flash-lite`
 - [Operations](#operations)
 - [Repository structure](#repository-structure)
 - [Documentation](#documentation)
-- [Team](#team)
+- [Author & attribution](#author--attribution)
 - [License](#license)
 
 ## Origin — Kaggle × Google AI Agents Capstone
 
-Ustaad originated as a submission to the **Kaggle × Google 5-Day AI Agents Intensive Capstone** and has evolved into **Ustaad 2.1**, an open-source career operating system maintained by **AgenticEra Systems**. The architecture demonstrates six production agentic patterns in a single low-cost deployment: parallel + sequential DAG orchestration (`asyncio.gather`), live search tool grounding with a 48-hour role-and-city cache, SSRF-guarded concurrent Proof-of-Work auditing (GitHub API + personal portfolio HTML inspection), structured JSON outputs with 1-shot self-repair, multi-turn stateful interview evaluation with adaptive follow-up probes and request-scoped multi-provider BYOK routing.
+Ustaad originated as a submission to the **Kaggle × Google 5-Day AI Agents Intensive Capstone** and has evolved into **Ustaad 2.1**, an open-source career operating system created and maintained by **Syed Muhammad Hassan** (**AgenticEra Systems**). The architecture demonstrates six production agentic patterns in a single low-cost deployment: parallel + sequential DAG orchestration (`asyncio.gather`), live search tool grounding with a 48-hour role-and-city cache, SSRF-guarded concurrent Proof-of-Work auditing (GitHub API + personal portfolio HTML inspection), structured JSON outputs with 1-shot self-repair, multi-turn stateful interview evaluation with adaptive follow-up probes and request-scoped multi-provider BYOK routing.
 
 **For reviewers and contributors:** start with [LLM providers and BYOK](docs/PROVIDERS_AND_BYOK.md), [recorded verification](docs/VERIFICATION.md), [Supabase setup](docs/SUPABASE_SETUP.md) and [deployment procedures](docs/DEPLOYMENT.md).
 
@@ -306,7 +308,7 @@ frontend/
   components/                Manuscript Ledger UI components, ProofOfWorkCard, BYOK studio and visual charts
   lib/                       API client, SSE consumer, curated resourceLinks/.ics exporter and BYOK state
   tests/                     Frontend unit test suite (resourceLinks and ICS export)
-  public/images/team/        Locally cached GitHub avatars for team attribution
+  public/images/team/        Locally cached creator GitHub avatar
 docs/                        Deployment, BYOK security, Supabase, verification and licensing guides
 ```
 
@@ -320,18 +322,19 @@ docs/                        Deployment, BYOK security, Supabase, verification a
 | [Verification](docs/VERIFICATION.md) | Recorded 3 November 2026 test evidence, reproduction commands and evaluation boundaries |
 | [Frontend](frontend/README.md) | Next.js 16 / React 19 routes, environment variables, browser BYOK state and scripts |
 | [Contributing](CONTRIBUTING.md) | Local development standards, security invariants and pull-request checks |
-| [Licensing](docs/LICENSING.md) | Apache 2.0 scope, attribution, third-party service terms and team avatar sources |
+| [Licensing](docs/LICENSING.md) | Apache 2.0 scope, attribution, third-party service terms and profile avatar source |
 
-## Team
+## Author & attribution
 
-Ustaad is built and maintained by **AgenticEra Systems** in Karachi, Pakistan. Individual commit history remains in Git.
+Ustaad (v1 & v2) was designed, architected, and built end-to-end by **Syed Muhammad Hassan** in Karachi, Pakistan (**AgenticEra Systems**). Full commit history is recorded in Git.
 
-| Profile image | Team member | Team focus | Profiles |
+| Profile image | Creator & maintainer | Engineering scope | Profiles |
 | --- | --- | --- | --- |
-| <img src="frontend/public/images/team/muhammad-hassan12.jpg" width="64" height="64" alt="Syed Muhammad Hassan’s GitHub avatar"> | Syed Muhammad Hassan | Backend architecture, Frontend Engineering, multi-agent orchestration & BYOK engine | [GitHub](https://github.com/Muhammad-Hassan12) · [LinkedIn](https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/) · [Portfolio](https://www.smhassan.me/) |
-| <img src="frontend/public/images/team/abdulmannan991.png" width="64" height="64" alt="Abdul Mannan Fazlani’s GitHub avatar"> | Abdul Mannan Fazlani | Frontend engineering, UI/UX & interactive workspace | [GitHub](https://github.com/abdulmannan991) · [LinkedIn](https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/) |
+| <img src="frontend/public/images/team/muhammad-hassan12.jpg" width="64" height="64" alt="Syed Muhammad Hassan’s GitHub avatar"> | **Syed Muhammad Hassan** | Creator & sole architect — 6-agent async DAG pipeline, FastAPI backend, Next.js 16 Manuscript Ledger frontend, interactive workspace & multi-provider BYOK engine | [Portfolio](https://www.smhassan.me/) · [GitHub](https://github.com/Muhammad-Hassan12) · [LinkedIn](https://www.linkedin.com/in/syed-muhammad-hassan-aa112928b/) |
 
-Profile images are locally stored snapshots of the corresponding GitHub avatars; sources and separate rights are documented in the [licensing guide](docs/LICENSING.md#team-profile-images).
+> *Capstone origin note:* Ustaad v1 was originally registered for the **Kaggle × Google 5-Day AI Agents Intensive Capstone (2026)** alongside competition teammate [Abdul Mannan Fazlani](https://github.com/abdulmannan991) ([LinkedIn](https://www.linkedin.com/in/abdul-mannan-fazlani-47b274293/)).
+
+The profile avatar is a locally stored snapshot of the corresponding GitHub avatar; source and separate rights are documented in the [licensing guide](docs/LICENSING.md#profile-images).
 
 ## License
 

@@ -91,8 +91,8 @@ class TestSecurityAndRateLimiting(unittest.TestCase):
 
         with patch("settings.daily_interview_call_limit", return_value=2):
             with patch("security._interview_counter", {"date": "2026-11-04", "count": 2}):
-                with patch("datetime.datetime") as mock_dt:
-                    mock_dt.now.return_value.date.return_value.isoformat.return_value = "2026-11-04"
+                with patch("security.datetime") as mock_dt:
+                    mock_dt.now.return_value = datetime(2026, 11, 4, 12, 0, 0, tzinfo=timezone.utc)
                     with self.assertRaises(HTTPException) as ctx:
                         enforce_server_interview_quota(is_byok=False)
                     self.assertEqual(ctx.exception.status_code, 429)

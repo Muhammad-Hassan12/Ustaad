@@ -12,7 +12,7 @@ The recorded verification runs on **4 November 2026** cover the Next.js 16 / Rea
 | Frontend production build (`next build`) | **Passed** with Next.js `16.4.4` (Turbopack) on Node `v24`. Static routes (`/`, `/about`, `/_not-found`, `/icon.png`) and dynamic session routes (`/dashboard/[sessionId]`, `/interview/[sessionId]`, `/resume/[sessionId]`, `/dossier/[sessionId]`) compiled cleanly (8 total routes). |
 | Lockfile integrity (`npm ci --dry-run`) | **Passed** against `frontend/package-lock.json` (`lockfileVersion: 3`). |
 | Backend test suites (`pytest`) | **37 passed in 5.2s** across `backend/test_v2_byok.py` (17 tests) and `backend/test_production_solid.py` (20 tests) on Python `3.12.3` (`fastapi 0.162.0`, `PyMuPDF 2.1`, `reportlab 5.1.0`) with zero live network or Supabase mutations (`-W default` verified free of unclosed-socket `ResourceWarning`s). |
-| Team asset integrity | Both GitHub team avatars (`muhammad-hassan12.jpg`, 12,591 bytes; `abdulmannan991.png`, 86,373 bytes) verified locally under `frontend/public/images/team/` with zero external runtime avatar requests. |
+| Profile asset integrity | Creator GitHub avatar (`muhammad-hassan12.jpg`, 12,591 bytes) verified locally under `frontend/public/images/team/` with zero external runtime avatar requests. |
 
 ## Backend regression coverage (`backend/test_v2_byok.py`)
 

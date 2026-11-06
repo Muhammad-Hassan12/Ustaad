@@ -1,6 +1,6 @@
 # Licensing and third-party materials
 
-Copyright 2026 AgenticEra Systems and Ustaad contributors.
+Copyright 2026 Syed Muhammad Hassan (AgenticEra Systems).
 
 We license Ustaad's original source code, tests, configuration templates, SQL definitions and written documentation under the **Apache License, Version 2.0**, unless a file explicitly identifies different terms. The complete, unmodified license text is in [LICENSE](../LICENSE), with project attribution in [NOTICE](../NOTICE). Contributors retain copyright in their respective contributions.
 
@@ -19,16 +19,15 @@ Apache 2.0 permits commercial use, modification and redistribution subject to it
 
 A software license does not grant access to hosted API keys, search quotas, database instances or production infrastructure. Operators deploying Ustaad must supply their own service credentials and comply with each provider's terms of use and data-handling policies.
 
-## Team profile images
+## Profile images
 
-The About page and project README display local snapshots of public GitHub avatars retrieved on **3 November 2026**. Serving these assets locally avoids external GitHub image requests during page visits.
+The About page and project README display a local snapshot of the creator's public GitHub avatar retrieved on **3 November 2026**. Serving this asset locally avoids external GitHub image requests during page visits.
 
-| Team member | Profile source | Local image |
+| Author | Profile source | Local image |
 | --- | --- | --- |
 | Syed Muhammad Hassan | [Muhammad-Hassan12](https://github.com/Muhammad-Hassan12) | [muhammad-hassan12.jpg](../frontend/public/images/team/muhammad-hassan12.jpg) |
-| Abdul Mannan Fazlani | [abdulmannan991](https://github.com/abdulmannan991) | [abdulmannan991.png](../frontend/public/images/team/abdulmannan991.png) |
 
-Public availability of a profile image does not grant general permission to reuse it outside project attribution. Cached avatars should be updated or removed promptly if requested by the corresponding team member.
+Public availability of a profile image does not grant general permission to reuse it outside project attribution. Cached avatars should be updated or removed promptly if requested by the account holder.
 
 ## Dependencies and redistribution
 
